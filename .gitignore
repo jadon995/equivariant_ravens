@@ -1,0 +1,4 @@
+assembling-kits*
+checkpoints*
+logs
+**/__pycache__/
