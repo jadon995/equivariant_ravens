@@ -9,7 +9,7 @@ from raven.gripper_align_box_corner import AlignBoxCorner
 from raven.gripper_stack_block_pyramid import StackBlockPyramid
 from raven.gripper_palletizing_boxes import PalletizingBoxes
 from raven.gripper_packing_boxes import PackingBoxes
-from raven.gripper_assembling_kits import AssemblingKits, AssemblingKitsTool
+from raven.gripper_assembling_kits import AssemblingKits, AssemblingKitsTool, AssemblingKitsScrewDriver
 
 parser = argparse.ArgumentParser(description='ravens_demos')
 
@@ -34,7 +34,7 @@ def main():
     env = enc_cls(args.assets_root,
                   disp=args.disp,
                   shared_memory=False,
-                  hz=480)
+                  hz=1000)
     if args.task == 'block-insertion':
         task = BlockInsertion(continuous=args.continuous)
     elif args.task == 'place-red-in-green':
@@ -51,6 +51,9 @@ def main():
         task = AssemblingKits(continuous=args.continuous)
     elif args.task == 'assembling-kits-tool':
         task = AssemblingKitsTool(continuous=args.continuous)
+    elif args.task == 'assembling-kits-screwdriver':
+        task = AssemblingKitsScrewDriver(continuous=args.continuous)
+
     else:
         raise RuntimeError('gripper version no {}'.format(args.task))
 

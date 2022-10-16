@@ -55,6 +55,7 @@ class PickPlace():
         if task_name == 'assembling-kits':
             offset = Transform(Rotation.identity(), [0, 0, -0.01])
             pick_pose_ = offset*Transform(Rotation.from_quat(pick_pose[1]), pick_pose[0])
+            vel = 0.10
 
         # pick_euler = utils.quatXYZW_to_eulerXYZ(pick
         # 
@@ -133,7 +134,7 @@ class PickPlace():
         # delete the constraint
         ee.release()
         # a small increase for the gripper width
-        ee.move(ee.read()+0.005)
+        ee.move(ee.read()+0.003)
         time.sleep(0.1)
         ee.move_tcp_xyz(postplace_pose,eef_step=eef_step,vel=vel)
         self.remove(ee)

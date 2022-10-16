@@ -23,7 +23,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="FNAME0" scale="SCALE0 SCALE1 SCALE2"/>
+        <mesh filename="FNAMECOLL0" scale="SCALE0 SCALE1 SCALE2"/>
       </geometry>
     </collision>
   </link>
