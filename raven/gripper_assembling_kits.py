@@ -343,3 +343,109 @@ class AssemblingKitsScrewDriver(Task):
 
     matches = np.int32(matches)
     self.goals.append((objects, matches, targets, False, True, 'pose', None, 1))
+
+class AssemblingKits3DTool(Task):
+  """Kitting Task - Hammer, piler, screwdriver, wrench."""
+
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.max_steps = 10
+    self.train_set = np.arange(0, 10)
+    self.test_set = np.arange(10, 15)
+    self.homogeneous = False
+    self.task_name = 'assembling-kits'
+
+  def reset(self, env):
+    super().reset(env)
+
+    tools = ['hammer', 'plier', 'screwdriver', 'wrench']
+    n_objects = [1, 1, 1, 1]
+
+    # Add kit
+    kit_size = (0.28, 0.26, 0.005)
+    kit_urdf = "plier/kit.urdf"
+    kit_pose = self.get_random_pose(env, kit_size)
+    env.add_object(kit_urdf, kit_pose, 'fixed')
+
+    obj_shapes = []
+    for i, tool in enumerate(tools):
+      if self.mode == 'train':
+        obj_shape = np.random.choice(self.train_set, n_objects[i])
+      else:
+        if self.homogeneous:
+          obj_shape = [np.random.choice(self.test_set)] * n_objects[i]
+        else:
+          obj_shape = np.random.choice(self.test_set, n_objects[i])
+      obj_shapes.append(obj_shape)
+
+    colors = [
+        utils.COLORS['purple'], utils.COLORS['blue'], utils.COLORS['green'],
+        utils.COLORS['yellow'], utils.COLORS['red']
+    ]
+    random.shuffle(colors)
+
+    symmetry = [
+        2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 
+        2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi,
+        2 * np.pi
+    ]    
+
+    # # Build kit.
+    targets = []
+    targ_pos = [[-0.02, 0.03, 0.0014],
+                [0.02, -0.03, 0.0014],
+                [0.02, 0.09, 0.0014],
+                [-0.02, -0.09, 0.0014]]
+    template = 'plier/object-template.urdf'
+    for j, tool in enumerate(tools):
+      for i in range(n_objects[j]):
+        shape = os.path.join(self.assets_root, tool,
+                           f'{obj_shapes[j][i]:02d}.obj')
+        scale = [1, 1, 0.1]
+        pos = utils.apply(kit_pose, targ_pos[j]) # need modified
+
+        rot = utils.quatXYZW_to_eulerXYZ(kit_pose[1])
+        theta = rot[2] + (-1)** i * np.pi / 2
+        # theta = rot[2] + i % 2 * np.pi
+        rot = utils.eulerXYZ_to_quatXYZW((0, 0, theta))
+
+        replace = {'FNAME': (shape,), 'FNAMECOLL': (shape,),
+                  'SCALE': scale, 'COLOR': (0.61176471, 0.45882353, 0.37254902)}
+        urdf = self.fill_template(template, replace)
+        env.add_object(urdf, (pos, rot), 'fixed')
+        os.remove(urdf)
+        targets.append((pos, rot))
+
+    # Add objects.
+    objects = []
+    matches = []
+    sizes =[[0.12, 0.15, 0.02],
+            [0.08, 0.15, 0.02],
+            [0.05, 0.15, 0.02],
+            [0.04, 0.15, 0.02]]
+    for j, tool in enumerate(tools):
+      for i in range(n_objects[j]):
+        shape = obj_shapes[j][i]
+        # size = (0.12, 0.15, 0.02)
+        size = sizes[j]
+        pose = self.get_random_pose(env, size)
+        fname = os.path.join(self.assets_root, tool, f'{shape:02d}_raw.obj')
+        fname_coll = os.path.join(self.assets_root, tool, f'{shape:02d}_coll.obj')
+        scale = [1, 1, 1]  # .0005
+        replace = {'FNAME': (fname,), 'FNAMECOLL': (fname_coll,) ,'SCALE': scale, 'COLOR': colors[j]}
+        urdf = self.fill_template(template, replace)
+        block_id = env.add_object(urdf, pose)
+        # print('block_id', block_id, 'pose')
+        os.remove(urdf)
+        objects.append((block_id, (symmetry[shape], None)))
+        # match = np.zeros(len(targets))
+        # match[np.argwhere(obj_shapes[j] == shape).reshape(-1)] = 1
+        # matches.append(match)
+
+    matches = [[1,0,0,0],
+               [0,1,0,0],
+               [0,0,1,0],
+               [0,0,0,1]]
+    
+    matches = np.int32(matches)
+    self.goals.append((objects, matches, targets, False, True, 'pose', None, 1))  
