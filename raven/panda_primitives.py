@@ -53,9 +53,9 @@ class PickPlace():
             eef_step = 0.008
             vel = 0.60
         if task_name == 'assembling-kits':
-            offset = Transform(Rotation.identity(), [0, 0, -0.01])
+            offset = Transform(Rotation.identity(), [0, 0, -0.02])
             pick_pose_ = offset*Transform(Rotation.from_quat(pick_pose[1]), pick_pose[0])
-            vel = 0.10
+            vel = 0.06
 
         # pick_euler = utils.quatXYZW_to_eulerXYZ(pick
         # 
@@ -119,7 +119,7 @@ class PickPlace():
         if task_name == 'packing-boxes':
             delta = Transform(Rotation.identity(), [0, 0, -0.1])
         if task_name == 'assembling-kits':
-            delta = Transform(Rotation.identity(), [0, 0, -0.1])            
+            delta = Transform(Rotation.identity(), [0, 0, 0.01])            
 
         #ee.move_tcp_xyz(delta*place_pose_,abort_on_contact=False)
         if ee.check_grasp():
@@ -134,7 +134,7 @@ class PickPlace():
         # delete the constraint
         ee.release()
         # a small increase for the gripper width
-        ee.move(ee.read()+0.003)
+        ee.move(ee.read()+0.005)
         time.sleep(0.1)
         ee.move_tcp_xyz(postplace_pose,eef_step=eef_step,vel=vel)
         self.remove(ee)

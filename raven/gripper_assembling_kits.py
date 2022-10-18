@@ -158,7 +158,7 @@ class AssemblingKitsTool(Task):
 
     # Add kit
     kit_size = (0.28, 0.26, 0.005)
-    kit_urdf = "plier/kit.urdf"
+    kit_urdf = "tool/kit.urdf"
     kit_pose = self.get_random_pose(env, kit_size)
     env.add_object(kit_urdf, kit_pose, 'fixed')
 
@@ -191,11 +191,13 @@ class AssemblingKitsTool(Task):
                 [0.02, -0.03, 0.0014],
                 [0.02, 0.09, 0.0014],
                 [-0.02, -0.09, 0.0014]]
-    template = 'plier/object-template.urdf'
+    template = 'tool/object-template.urdf'
     for j, tool in enumerate(tools):
       for i in range(n_objects[j]):
-        shape = os.path.join(self.assets_root, tool,
+        shape = os.path.join(self.assets_root, f'tool', f'2d', tool,
                            f'{obj_shapes[j][i]:02d}.obj')
+        shape_coll = os.path.join(self.assets_root, f'tool', f'2d', tool,
+                           f'{obj_shapes[j][i]:02d}_coll.obj')
         scale = [1, 1, 0.1]
         pos = utils.apply(kit_pose, targ_pos[j]) # need modified
 
@@ -204,7 +206,7 @@ class AssemblingKitsTool(Task):
         # theta = rot[2] + i % 2 * np.pi
         rot = utils.eulerXYZ_to_quatXYZW((0, 0, theta))
 
-        replace = {'FNAME': (shape,), 'FNAMECOLL': (shape,),
+        replace = {'FNAME': (shape,), 'FNAMECOLL': (shape_coll,),
                   'SCALE': scale, 'COLOR': (0.2, 0.2, 0.2)}
         urdf = self.fill_template(template, replace)
         env.add_object(urdf, (pos, rot), 'fixed')
@@ -224,8 +226,8 @@ class AssemblingKitsTool(Task):
         # size = (0.12, 0.15, 0.02)
         size = sizes[j]
         pose = self.get_random_pose(env, size)
-        fname = os.path.join(self.assets_root, tool, f'{shape:02d}.obj')
-        fname_coll = os.path.join(self.assets_root, tool, f'{shape:02d}_coll.obj')
+        fname = os.path.join(self.assets_root, f'tool', f'2d', tool, f'{shape:02d}.obj')
+        fname_coll = os.path.join(self.assets_root, f'tool', f'2d', tool, f'{shape:02d}_coll.obj')
         scale = [1, 1, 1]  # .0005
         replace = {'FNAME': (fname,), 'FNAMECOLL': (fname_coll,) ,'SCALE': scale, 'COLOR': colors[j]}
         urdf = self.fill_template(template, replace)
@@ -261,14 +263,13 @@ class AssemblingKitsScrewDriver(Task):
 
     # Add kit
     kit_size = (0.24, 0.26, 0.005)
-    kit_urdf = "screwdriver/kit.urdf"
+    kit_urdf = "tool/kit.urdf"
     kit_pose = self.get_random_pose(env, kit_size)
     env.add_object(kit_urdf, kit_pose, 'fixed')
 
     n_objects = 6
     if self.mode == 'train':
       obj_shapes = np.random.choice(self.train_set, n_objects)
-      # obj_shapes = np.random.choice(self.train_set, 1) * 6
     else:
       if self.homogeneous:
         obj_shapes = [np.random.choice(self.test_set)] * n_objects
@@ -298,10 +299,12 @@ class AssemblingKitsScrewDriver(Task):
                 [0.00, -0.10, 0.0014]]
     scales = [1.11, 1, 0.89, 0.78, 0.67, 0.56] # different scales [20, 18, ..., 10]
     
-    template = 'screwdriver/object-template.urdf'
+    template = 'tool/object-template.urdf'
     for i in range(n_objects):
-      shape = os.path.join(self.assets_root, 'screwdriver',
+      shape = os.path.join(self.assets_root, f'tool', f'2d', f'screwdriver',
                            f'{obj_shapes[i]:02d}.obj')
+      shape_coll = os.path.join(self.assets_root, f'tool', f'2d', f'screwdriver',
+                           f'{obj_shapes[i]:02d}_coll.obj')
       scale = [scales[i], scales[i], 0.1]
       pos = utils.apply(kit_pose, targ_pos[i])
 
@@ -309,7 +312,7 @@ class AssemblingKitsScrewDriver(Task):
       theta = rot[2] + (-1)** i * np.pi / 2
       rot = utils.eulerXYZ_to_quatXYZW((0, 0, theta))
 
-      replace = {'FNAME': (shape,), 'FNAMECOLL': (shape,),
+      replace = {'FNAME': (shape,), 'FNAMECOLL': (shape_coll,),
                   'SCALE': scale, 'COLOR': (0.2, 0.2, 0.2)}
       urdf = self.fill_template(template, replace)
       env.add_object(urdf, (pos, rot), 'fixed')
@@ -324,8 +327,8 @@ class AssemblingKitsScrewDriver(Task):
       shape = obj_shapes[i]
       size = (0.04, 0.10, 0.02)
       pose = self.get_random_pose(env, size)
-      fname = os.path.join(self.assets_root, 'screwdriver', f'{shape:02d}.obj')
-      fname_coll = os.path.join(self.assets_root, 'screwdriver', f'{shape:02d}_coll.obj')
+      fname = os.path.join(self.assets_root, f'tool', f'2d', 'screwdriver', f'{shape:02d}.obj')
+      fname_coll = os.path.join(self.assets_root, f'tool', f'2d', 'screwdriver', f'{shape:02d}_coll.obj')
       scale = [scales[i], scales[i], 1]  # .0005
       replace = {'FNAME': (fname,), 'FNAMECOLL': (fname_coll,),
                   'SCALE': scale, 'COLOR': colors[i % len(colors)]}
@@ -363,7 +366,7 @@ class AssemblingKits3DTool(Task):
 
     # Add kit
     kit_size = (0.28, 0.26, 0.005)
-    kit_urdf = "plier/kit.urdf"
+    kit_urdf = "tool/kit.urdf"
     kit_pose = self.get_random_pose(env, kit_size)
     env.add_object(kit_urdf, kit_pose, 'fixed')
 
@@ -396,11 +399,13 @@ class AssemblingKits3DTool(Task):
                 [0.02, -0.03, 0.0014],
                 [0.02, 0.09, 0.0014],
                 [-0.02, -0.09, 0.0014]]
-    template = 'plier/object-template.urdf'
+    template = 'tool/object-template.urdf'
     for j, tool in enumerate(tools):
       for i in range(n_objects[j]):
-        shape = os.path.join(self.assets_root, tool,
+        shape = os.path.join(self.assets_root, f'tool', f'2d', tool,
                            f'{obj_shapes[j][i]:02d}.obj')
+        shape_coll = os.path.join(self.assets_root, f'tool', f'2d', tool,
+                           f'{obj_shapes[j][i]:02d}_coll.obj')
         scale = [1, 1, 0.1]
         pos = utils.apply(kit_pose, targ_pos[j]) # need modified
 
@@ -409,7 +414,7 @@ class AssemblingKits3DTool(Task):
         # theta = rot[2] + i % 2 * np.pi
         rot = utils.eulerXYZ_to_quatXYZW((0, 0, theta))
 
-        replace = {'FNAME': (shape,), 'FNAMECOLL': (shape,),
+        replace = {'FNAME': (shape,), 'FNAMECOLL': (shape_coll,),
                   'SCALE': scale, 'COLOR': (0.61176471, 0.45882353, 0.37254902)}
         urdf = self.fill_template(template, replace)
         env.add_object(urdf, (pos, rot), 'fixed')
@@ -429,8 +434,8 @@ class AssemblingKits3DTool(Task):
         # size = (0.12, 0.15, 0.02)
         size = sizes[j]
         pose = self.get_random_pose(env, size)
-        fname = os.path.join(self.assets_root, tool, f'{shape:02d}_raw.obj')
-        fname_coll = os.path.join(self.assets_root, tool, f'{shape:02d}_coll.obj')
+        fname = os.path.join(self.assets_root, f'tool', f'3d', tool, f'{shape:02d}.obj')
+        fname_coll = os.path.join(self.assets_root, f'tool', f'3d', tool, f'{shape:02d}_coll.obj')
         scale = [1, 1, 1]  # .0005
         replace = {'FNAME': (fname,), 'FNAMECOLL': (fname_coll,) ,'SCALE': scale, 'COLOR': colors[j]}
         urdf = self.fill_template(template, replace)
