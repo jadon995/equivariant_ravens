@@ -16,7 +16,7 @@ from raven.gripper_align_box_corner import AlignBoxCorner
 from raven.gripper_stack_block_pyramid import StackBlockPyramid
 from raven.gripper_palletizing_boxes import PalletizingBoxes
 from raven.gripper_packing_boxes import PackingBoxes
-from raven.gripper_assembling_kits import AssemblingKits, AssemblingKitsTool, AssemblingKits3DTool, AssemblingKitsScrewDriver
+from raven.gripper_assembling_kits import AssemblingKits, AssemblingKitsTool, AssemblingKits3DTool, AssemblingKitsScrewDriver, AssemblingKits3DToolKit
 
 from networks.equivariant_transporter import TransporterAgent as equ_agent
 from networks.non_equi_transporter import TransporterAgent as non_equi_agent
@@ -78,6 +78,8 @@ def main(args):
         task = AssemblingKitsScrewDriver(continuous=args.continuous)
     elif args.task == 'assembling-kits-3dtool':
         task = AssemblingKits3DTool(continuous=args.continuous)
+    elif args.task == 'assembling-kits-3dtoolkit':
+        task = AssemblingKits3DToolKit(continuous=args.continuous)
     else:
         raise RuntimeError('gripper version no {}'.format(args.task))
     task.mode = 'test'

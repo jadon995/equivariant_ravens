@@ -498,10 +498,12 @@ class AssemblingKits3DToolKit(Task):
     kit_num = self.train_set[self.count]
     kit_shape = os.path.join(self.assets_root, f'tool3d', f'kit_{self.mode}',
         f'{kit_num:04d}', f'kit.obj')
-    replace = {'FNAME': (kit_shape,), 'FNAMECOLL': (kit_shape,),
+    kit_shape_coll = os.path.join(self.assets_root, f'tool3d', f'kit_{self.mode}',
+        f'{kit_num:04d}', f'kit_coll.obj')
+    replace = {'FNAME': (kit_shape,), 'FNAMECOLL': (kit_shape_coll,),
                   'SCALE': (1, 1, 1), 'COLOR': (0.61176471, 0.45882353, 0.37254902)}
-    # template = 'tool3d/kit-template.urdf'
-    template = 'tool3d/object-template.urdf'
+    template = 'tool3d/kit-template.urdf'
+    # template = 'tool3d/object-template.urdf'
     urdf = self.fill_template(template, replace)
     env.add_object(urdf, kit_pose, 'fixed')
     os.remove(urdf)
