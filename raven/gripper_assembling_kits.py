@@ -15,8 +15,11 @@
 
 """Kitting Tasks."""
 
+from ctypes import util
 import os
+from re import template
 import sys
+import json
 
 import numpy as np
 from gripper_task import Task
@@ -453,4 +456,98 @@ class AssemblingKits3DTool(Task):
                [0,0,0,1]]
     
     matches = np.int32(matches)
-    self.goals.append((objects, matches, targets, False, True, 'pose', None, 1))  
+    self.goals.append((objects, matches, targets, False, True, 'pose', None, 1))
+
+class AssemblingKits3DToolKit(Task):
+  """Kitting 3D tools"""
+
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.max_steps = 10
+    # self.train_set = np.arange(0, 10)
+    # self.test_set = np.arange(10, 15)
+    # self.homogeneous = False
+    self.task_name = 'assembling-kits'
+    self.tools = ['hammer', 'plier', 'wrench', 'screwdriver']
+    self.train_set = np.arange(100)
+    np.random.seed(0)
+    np.random.shuffle(self.train_set)
+    self.count = 0
+
+  def reset(self, env):
+    super().reset(env)
+
+    colors = [
+        utils.COLORS['purple'], utils.COLORS['blue'], utils.COLORS['green'],
+        utils.COLORS['yellow'], utils.COLORS['red']
+    ]
+    random.shuffle(colors)
+    symmetry = [
+        2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 
+        2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi,
+        2 * np.pi
+    ]   
+
+    # build kit
+    kit_size = (0.28, 0.26, 0.05)
+    kit_pose = self.get_random_pose(env, kit_size)
+    pos = (kit_pose[0][0], kit_pose[0][1], 0)
+    rot = kit_pose[1]
+    kit_pose = (pos, rot)
+
+    kit_num = self.train_set[self.count]
+    kit_shape = os.path.join(self.assets_root, f'tool3d', f'kit_{self.mode}',
+        f'{kit_num:04d}', f'kit.obj')
+    replace = {'FNAME': (kit_shape,), 'FNAMECOLL': (kit_shape,),
+                  'SCALE': (1, 1, 1), 'COLOR': (0.61176471, 0.45882353, 0.37254902)}
+    # template = 'tool3d/kit-template.urdf'
+    template = 'tool3d/object-template.urdf'
+    urdf = self.fill_template(template, replace)
+    env.add_object(urdf, kit_pose, 'fixed')
+    os.remove(urdf)
+
+    # load kit info 
+    kit_info = os.path.join(self.assets_root, f'tool3d', f'kit_{self.mode}',
+        f'{kit_num:04d}', f'info.json')
+    with open(kit_info, 'r') as json_file:
+      kit_data = json.load(json_file)
+    
+    # TODO targets
+    targets = []
+    for obj in kit_data:
+      pos = utils.apply(kit_pose, obj['pos'])
+      rot = utils.quatXYZW_to_eulerXYZ(kit_pose[1])
+      rot = utils.eulerXYZ_to_quatXYZW((0, 0, rot[2]))
+      targets.append((pos, rot))
+
+    # Add objects
+    objects = []
+    matches = []
+    sizes =[[0.12, 0.10, 0.02],
+            [0.08, 0.10, 0.02],
+            [0.05, 0.10, 0.02],
+            [0.05, 0.10, 0.02]] 
+    template = 'tool3d/object-template.urdf'
+    for i, obj in enumerate(kit_data):
+      shape = obj['id']
+      size = sizes[i]
+      pose = self.get_random_pose(env, size)
+      fname = os.path.join(self.assets_root, f'tool3d', obj['type'], f"{shape:02d}.obj")
+      fname_coll = os.path.join(self.assets_root, f'tool3d', obj['type'], f"{obj['id']:02d}_coll.obj")
+      scale = [1,1,1]
+      replace = {'FNAME': (fname,), 'FNAMECOLL': (fname_coll,) ,'SCALE': scale, 'COLOR': colors[i]}
+      urdf = self.fill_template(template, replace)
+      block_id = env.add_object(urdf, pose)
+      os.remove(urdf)
+      objects.append((block_id, (symmetry[shape], None)))
+
+    matches = [[1,0,0,0],
+               [0,1,0,0],
+               [0,0,1,0],
+               [0,0,0,1]]
+    
+    matches = np.int32(matches)
+    self.goals.append((objects, matches, targets, False, True, 'pose', None, 1))
+    
+    self.count += 1
+
