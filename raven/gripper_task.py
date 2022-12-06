@@ -37,6 +37,8 @@ import pybullet as p
 #TODO (by haojie) define a function with suction griiper that attach the center point of the object.
 from transform import Transform,Rotation
 
+from scipy import spatial
+
 class Task():
   """Base Task class."""
 
@@ -526,6 +528,32 @@ class Task():
           for j in targets_i:
             target_pose = targs[j]
             if self.is_match(pose, target_pose, symmetry):
+              step_reward += max_reward / len(objs)
+              break
+      
+      # Evaluate by average shortest distance metric (ADD-S)
+      elif metric == "adi":
+        step_reward = 0
+        for i in range(len(objs)):
+          object_id, (symmetry, mesh) = objs[i]
+          pose = p.getBasePositionAndOrientation(object_id)
+          targets_i = np.argwhere(matches[i, :]).reshape(-1)
+          for j in targets_i:
+            rotation = np.array(p.getMatrixFromQuaternion(pose[1])).reshape(3, 3)
+            transform = np.array(pose[0]).reshape(3,1)
+            pts_est = utils.transform_pts_Rt(mesh, rotation, transform)
+
+            rotation = np.array(p.getMatrixFromQuaternion(targs[j][1])).reshape(3, 3)
+            transform = np.array(targs[j][0]).reshape(3,1)
+            # transform[2,0] += 0.001
+            pts_gt = utils.transform_pts_Rt(mesh, rotation, transform)
+
+            nn_index = spatial.cKDTree(pts_est)
+            nn_dist, _ = nn_index.query(pts_gt, k=1)
+
+            e = nn_dist.mean()
+            print(e)
+            if e < 0.0035:
               step_reward += max_reward / len(objs)
               break
 

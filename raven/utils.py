@@ -316,6 +316,18 @@ def apply_transform(transform_to_from, points_from):
     points_to = transform_to_from @ points_from
     return points_to[:, 0:3, :]
 
+  
+def transform_pts_Rt(pts, R, t):
+  """Applies a rigid transformation to 3D points.
+  :param pts: nx3 ndarray with 3D points.
+  :param R: 3x3 ndarray with a rotation matrix.
+  :param t: 3x1 ndarray with a translation vector.
+  :return: nx3 ndarray with transformed 3D points.
+  """
+  assert (pts.shape[1] == 3)
+  pts_t = R.dot(pts.T) + t.reshape((3, 1))
+  return pts_t.T
+
 
 #-----------------------------------------------------------------------------
 # IMAGE UTILS

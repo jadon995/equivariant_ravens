@@ -27,6 +27,8 @@ import utils
 import random
 import matplotlib.pyplot as plt
 
+import open3d as o3d
+
 file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
 
@@ -541,7 +543,13 @@ class AssemblingKits3DToolKit(Task):
       urdf = self.fill_template(template, replace)
       block_id = env.add_object(urdf, pose)
       os.remove(urdf)
-      objects.append((block_id, (symmetry[shape], None)))
+
+      # load meshes
+      mesh = o3d.io.read_triangle_mesh(str(fname_coll))
+      mesh = np.asarray(mesh.vertices)
+
+      # objects.append((block_id, (symmetry[shape], None)))
+      objects.append((block_id, (symmetry[shape], mesh)))
 
     matches = [[1,0,0,0],
                [0,1,0,0],
@@ -549,7 +557,11 @@ class AssemblingKits3DToolKit(Task):
                [0,0,0,1]]
     
     matches = np.int32(matches)
-    self.goals.append((objects, matches, targets, False, True, 'pose', None, 1))
+    # # Pose metric
+    # self.goals.append((objects, matches, targets, False, True, 'pose', None, 1))
+
+    # Using metric of average closest distance
+    self.goals.append((objects, matches, targets, True, True, 'adi', None, 1))
     
     self.count += 1
 
