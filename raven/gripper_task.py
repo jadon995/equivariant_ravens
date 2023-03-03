@@ -340,6 +340,12 @@ class Task():
       #print('pick position: ',pick_pos)
       #TODO by haojie z value and theta for grasp
 
+      # remain in the continuous space
+      # print("pick_pos descrete", pick_pos)
+      # pick_pos = (_xyz[0], _xyz[1], pick_pos[2])
+      # print(pick_pos)
+      # print("pick_pos continuos", pick_pos)
+
       #print('=============',self.task_name)
       #print(self.task_name == 'palletizing-boxes')
 
@@ -398,8 +404,26 @@ class Task():
           _z_rot = Rotation.from_euler('z', 0.)
         _z_rot = Rotation.from_euler('z', np.pi/2)
 
-        pick_pose_ = (np.asarray(pick_pos), (_z_rot*Rotation.from_quat(np.asarray(_pose[1]))).as_quat())
+        # not constrained to the top down grasping
+        # pick_pose_ = (np.asarray(pick_pos), (_z_rot*Rotation.from_quat(np.asarray(_pose[1]))).as_quat())
 
+        """ constrained to top-down planar grasping
+        pick_pose_mx_ = (Rotation.from_quat(np.asarray(_pose[1]))).as_matrix()
+        obj_y_axis_ = pick_pose_mx_[:, 1]
+        obj_y_axis_[-1] = 0.
+        obj_y_axis_ = obj_y_axis_/ np.linalg.norm(obj_y_axis_)
+        obj_z_axis_ = np.array([0., 0., 1.0])
+        obj_x_axis_ = np.cross(obj_y_axis_, obj_z_axis_)
+        pick_pose_mx_ = np.stack((obj_x_axis_, obj_y_axis_, obj_z_axis_), axis=-1)
+        pick_pose_ = (np.asarray(pick_pos), (_z_rot*Rotation.from_matrix(np.asarray(pick_pose_mx_))).as_quat())
+        # print(pick_pose_)
+        # print((Rotation.from_quat(pick_pose_[1])).as_matrix())
+        """
+        obj_euler = utils.quatXYZW_to_eulerXYZ(_pose[1])
+        obj_quat = utils.eulerXYZ_to_quatXYZW((0, 0, obj_euler[2])) # only have theta value along z-axis
+        pick_pose_ = (np.asarray(pick_pos) , (_z_rot*Rotation.from_quat(np.asarray(obj_quat))).as_quat())
+        # print(pick_pose_)
+        # print((Rotation.from_quat(pick_pose_[1])).as_matrix())
 
       if self.task_name == 'palletizing-boxes':
         #print(5)
@@ -464,7 +488,10 @@ class Task():
 
 
       # Todo discretized function for gripper
-      pick_pose_,place_pose = self.discretized(pick_pose_,place_pose)
+      # pick_pose_,place_pose = self.discretized(pick_pose_,place_pose)
+      # print("pick_pose: ",pick_pose_)
+      # print("place_pose:",place_pose)
+      # print(targ_pose)
 
       return {'pose0': pick_pose_, 'pose1': place_pose}
 

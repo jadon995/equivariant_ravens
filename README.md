@@ -14,7 +14,7 @@ It inherits the Gym-like API from Ravens, each with (i) a scripted oracle that p
 
 (a) **block-insertion**: pick up the L-shaped red block and place it into the L-shaped fixture.<br>
 (b) **place-red-in-green**: pick up the red blocks and place them into the green bowls amidst other objects.<br>
-(c) **align-box-corner**: pick up the randomly sized box and align one of its corners to the L-shaped marker on the tabletop.<br>
+(c) **align-box-corner**: pick vup the randomly sized box and align one of its corners to the L-shaped marker on the tabletop.<br>
 (d) **stack-block-pyramid**: sequentially stack 6 blocks into a pyramid of 3-2-1 with rainbow colored ordering.<br>
 (e) **palletizing-boxes**: pick up homogeneous fixed-sized boxes and stack them in transposed layers on the pallet.<br>
 
@@ -41,17 +41,17 @@ pip install -r ./requirements.txt
 ## Getting Started
 
 **Step 1.** Generate training and testing data.
-
+ 
 ```shell
-python gripper_get_demo.py  --mode train --task assembling-kits --n 100 --disp
-python gripper_get_demo.py  --mode test  --task assembling-kits --n 100 --disp
+python gripper_get_demo.py  --mode train --task assembling-kits-3dtoolkit --n 100 --disp
+python gripper_get_demo.py  --mode test  --task assembling-kits-3dtoolkit --n 100 --disp
 ```
 
 
 **Step 2.** Train a model e.g., Equivariant Transporter. Parameters are saved to the `checkpoints_{model}` directory. 
 
 ```shell
-python train.py --equ --lite --angle_lite --task assembling-kits --n_demos 100 --interval 1000 --n_step 10000 --init
+python train.py --equ --lite --angle_lite --task assembling-kits-3dtoolkit --n_demos 100 --interval 1000 --n_step 10000 --init
 ```
 
 **Step 3.** Evaluate the model trained for 200 iterations with 1 demos. Results are saved to the `test_{model}` directory.
