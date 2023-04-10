@@ -465,16 +465,16 @@ class AssemblingKits3DToolKit(Task):
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    self.max_steps = 10
+    self.max_steps = 4
     # self.train_set = np.arange(0, 10)
     # self.test_set = np.arange(10, 15)
     # self.homogeneous = False
     self.task_name = 'assembling-kits'
     self.tools = ['hammer', 'plier', 'wrench', 'screwdriver']
+    self.kp_idx = [1, 0, 1, 1]
     self.train_set = np.arange(100)
     np.random.seed(0)
     np.random.shuffle(self.train_set)
-    self.count = 0
 
   def reset(self, env):
     super().reset(env)
@@ -497,7 +497,8 @@ class AssemblingKits3DToolKit(Task):
     rot = kit_pose[1]
     kit_pose = (pos, rot)
 
-    kit_num = self.train_set[self.count]
+    kit_num = np.random.choice(self.train_set, 1)[0]
+    # kit_num = 13
     kit_shape = os.path.join(self.assets_root, f'tool3d', f'kit_{self.mode}',
         f'{kit_num:04d}', f'kit.obj')
     kit_shape_coll = os.path.join(self.assets_root, f'tool3d', f'kit_{self.mode}',
@@ -505,7 +506,6 @@ class AssemblingKits3DToolKit(Task):
     replace = {'FNAME': (kit_shape,), 'FNAMECOLL': (kit_shape_coll,),
                   'SCALE': (1, 1, 1), 'COLOR': (0.61176471, 0.45882353, 0.37254902)}
     template = 'tool3d/kit-template.urdf'
-    # template = 'tool3d/object-template.urdf'
     urdf = self.fill_template(template, replace)
     env.add_object(urdf, kit_pose, 'fixed')
     os.remove(urdf)
@@ -518,15 +518,32 @@ class AssemblingKits3DToolKit(Task):
     
     # TODO targets
     targets = []
-    for obj in kit_data:
+    scales = []
+    pick_points = []
+    for i, obj in enumerate(kit_data):
+      fname = os.path.join(self.assets_root, f'tool3d', obj['type'], f"{obj['id']:02d}.json")
+      with open(fname, 'r') as json_file:
+        kp_data = json.load(json_file)
+        
+      pick_point = kp_data['keypoints'][self.kp_idx[i]]["xyz"]
+      pick_point = np.array([float(value) for value in (pick_point[1:-1]).split(',')]) * obj['scale']
+      # pick_point[0] -= 0.001
+      
+      if i == 0 or i == 2:
+        pick_point[1] -= 0.02
+      pick_points.append(pick_point)
+
       pos = utils.apply(kit_pose, obj['pos'])
       rot = utils.quatXYZW_to_eulerXYZ(kit_pose[1])
       rot = utils.eulerXYZ_to_quatXYZW((0, 0, rot[2]))
       targets.append((pos, rot))
+      scales.append(obj['scale'])
+
 
     # Add objects
     objects = []
     matches = []
+    shapes = {}
     sizes =[[0.12, 0.10, 0.02],
             [0.08, 0.10, 0.02],
             [0.05, 0.10, 0.02],
@@ -538,7 +555,7 @@ class AssemblingKits3DToolKit(Task):
       pose = self.get_random_pose(env, size)
       fname = os.path.join(self.assets_root, f'tool3d', obj['type'], f"{shape:02d}.obj")
       fname_coll = os.path.join(self.assets_root, f'tool3d', obj['type'], f"{obj['id']:02d}_coll.obj")
-      scale = [1,1,1]
+      scale = [scales[i]] * 3
       replace = {'FNAME': (fname,), 'FNAMECOLL': (fname_coll,) ,'SCALE': scale, 'COLOR': colors[i]}
       urdf = self.fill_template(template, replace)
       block_id = env.add_object(urdf, pose)
@@ -548,9 +565,14 @@ class AssemblingKits3DToolKit(Task):
       mesh = o3d.io.read_triangle_mesh(str(fname_coll))
       mesh = np.asarray(mesh.vertices)
 
-      # objects.append((block_id, (symmetry[shape], None)))
-      objects.append((block_id, (symmetry[shape], mesh)))
+      # grasp keypoint
+      pick_point = pick_points[i]
 
+      # objects.append((block_id, (symmetry[shape], None)))
+      objects.append((block_id, (symmetry[shape], mesh), pick_point))
+      
+      shapes[obj['type']] = obj['id']
+    print("Kit {:02d}: ".format(kit_num), shapes)
     matches = [[1,0,0,0],
                [0,1,0,0],
                [0,0,1,0],
@@ -563,5 +585,4 @@ class AssemblingKits3DToolKit(Task):
     # Using metric of average closest distance
     self.goals.append((objects, matches, targets, True, True, 'adi', None, 1))
     
-    self.count += 1
 

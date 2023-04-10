@@ -2,3 +2,5 @@ assembling-kits*
 checkpoints*
 logs
 **/__pycache__/
+tool3d
+test_*

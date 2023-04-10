@@ -23,6 +23,9 @@ from networks.non_equi_transporter import TransporterAgent as non_equi_agent
 from networks.femi_transporter import TransporterAgent as femi_agent
 from networks.semi_transporter import TransporterAgent as semi_agent
 from networks.equivariant_transporter_tail import TransporterAgent as equ_agent_tail
+from networks.gr_non_equi_transporter import TransporterAgent as gr_agent
+from networks.gr_equi_transporter import TransporterAgent as gr_equ_agent
+from networks.so2_equivariant_transporter import TransporterAgent as so2_equ_agent
 
 import faulthandler; faulthandler.enable()
 
@@ -47,6 +50,9 @@ parser.add_argument('--femi', action='store_true', default=False)
 parser.add_argument('--semi', action='store_true', default=False)
 parser.add_argument('--non', action='store_true', default=False)
 parser.add_argument('--tail', action='store_true', default=False)
+parser.add_argument('--grconv', action='store_true', default=False)
+parser.add_argument('--equ_grconv', action='store_true', default=False)
+parser.add_argument('--equ_so2', action='store_true', default=False)
 args = parser.parse_args()
 
 def main(args):
@@ -112,7 +118,16 @@ def main(args):
         if args.tail:
             print('equvairant agent with tail network')
             agent = equ_agent_tail(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        
+        if args.grconv:
+            print('no equivariant grconv agent')
+            agent = gr_agent(name=name,task=args.task,root_dir=args.data_dir)
+        if args.equ_grconv:
+            print('equivariant grconv agent')
+            agent = gr_equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+        if args.equ_so2:
+            print('so(2) equivariant agent')
+            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+    
         if args.entire ==True:
             n_steps = [20000,15000,5000,2000]
         else:
@@ -172,6 +187,21 @@ def main(args):
                     os.makedirs(os.path.join(args.root_dir, 'test_tail'))
                   with open(os.path.join(args.root_dir, 'test_tail', f'{name}-{test_step}.pkl'),'wb') as f:
                       pickle.dump(results, f)
+                if args.grconv:
+                  if not os.path.exists(os.path.join(args.root_dir, 'test_gr')):
+                    os.makedirs(os.path.join(args.root_dir, 'test_gr'))
+                  with open(os.path.join(args.root_dir, 'test_gr', f'{name}-{test_step}.pkl'),'wb') as f:
+                      pickle.dump(results, f)
+                if args.equ_grconv:
+                  if not os.path.exists(os.path.join(args.root_dir, 'test_equ_gr')):
+                    os.makedirs(os.path.join(args.root_dir, 'test_equ_gr'))
+                  with open(os.path.join(args.root_dir, 'test_equ_gr', f'{name}-{test_step}.pkl'),'wb') as f:
+                      pickle.dump(results, f)
+                if args.equ_so2:
+                  if not os.path.exists(os.path.join(args.root_dir, 'test_so2_equ')):
+                    os.makedirs(os.path.join(args.root_dir, 'test_so2_equ'))
+                  with open(os.path.join(args.root_dir, 'test_so2_equ', f'{name}-{test_step}.pkl'),'wb') as f:
+                    pickle.dump(results, f)
                 
 
 if __name__=="__main__":

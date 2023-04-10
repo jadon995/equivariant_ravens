@@ -132,7 +132,7 @@ class Task():
         matches = matches.copy()
         # Ignore already matched objects.
         for i in range(len(objs)):
-          object_id, (symmetry, _) = objs[i]
+          object_id, (symmetry, _), _ = objs[i]
           pose = p.getBasePositionAndOrientation(object_id)
           targets_i = np.argwhere(matches[i, :]).reshape(-1)
           for j in targets_i:
@@ -144,7 +144,7 @@ class Task():
       nn_dists = []
       nn_targets = []
       for i in range(len(objs)):
-        object_id, (symmetry, _) = objs[i]
+        object_id, (symmetry, _), _ = objs[i]
         xyz, _ = p.getBasePositionAndOrientation(object_id)
         targets_i = np.argwhere(matches[i, :]).reshape(-1)
         #print('argwhere',np.argwhere(np.array([0,1,0,1,1])))
@@ -306,6 +306,7 @@ class Task():
           _x=0.
           _y=0.
           _z = 0.04
+          _x, _y, _z = objs[pick_i][2] # keypoint
           _xyz = np.asarray([_x,_y,_z])
           _trans = Transform(Rotation.from_quat(np.asarray(_pose[1])),np.asarray(_pose[0]))
           _xyz = _trans.transform_point(_xyz)
@@ -549,7 +550,7 @@ class Task():
       if metric == 'pose':
         step_reward = 0
         for i in range(len(objs)):
-          object_id, (symmetry, _) = objs[i]
+          object_id, (symmetry, _), _ = objs[i]
           pose = p.getBasePositionAndOrientation(object_id)
           targets_i = np.argwhere(matches[i, :]).reshape(-1)
           for j in targets_i:
@@ -562,7 +563,7 @@ class Task():
       elif metric == "adi":
         step_reward = 0
         for i in range(len(objs)):
-          object_id, (symmetry, mesh) = objs[i]
+          object_id, (symmetry, mesh), _ = objs[i]
           pose = p.getBasePositionAndOrientation(object_id)
           targets_i = np.argwhere(matches[i, :]).reshape(-1)
           for j in targets_i:

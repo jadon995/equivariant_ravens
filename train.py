@@ -14,6 +14,9 @@ from networks.femi_transporter import TransporterAgent as femi_agent
 from networks.semi_transporter import TransporterAgent as semi_agent
 from networks.equivariant_transporter_tail import TransporterAgent as equ_agent_tail
 from networks.equivariant_transporter import TransporterAgent as equ_agent
+from networks.gr_non_equi_transporter import TransporterAgent as gr_agent
+from networks.gr_equi_transporter import TransporterAgent as gr_equ_agent
+from networks.so2_equivariant_transporter import TransporterAgent as so2_equ_agent
 
 # import faulthandler; faulthandler.enable()
 
@@ -35,6 +38,9 @@ parser.add_argument('--semi', action='store_true', default=False)
 parser.add_argument('--non', action='store_true', default=False)
 parser.add_argument('--tail', action='store_true', default=False)
 parser.add_argument('--init', action='store_true', default=False)
+parser.add_argument('--grconv', action='store_true', default=False)
+parser.add_argument('--equ_grconv', action='store_true', default=False)
+parser.add_argument('--equ_so2', action='store_true', default=False)
 args = parser.parse_args()
 
 def main(args):
@@ -80,7 +86,15 @@ def main(args):
         if args.tail:
             print('equvairant agent with tail network')
             agent = equ_agent_tail(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite, init = args.init)
-
+        if args.grconv:
+            print('non equivariant grconvnet agent')
+            agent = gr_agent(name=name,task=args.task,root_dir=args.data_dir,load=args.load)
+        if args.equ_grconv:
+            print('equvariant grconvnet agent')
+            agent = gr_equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite,init = args.init)
+        if args.equ_so2:
+            print('so(2) equvariant agent')
+            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite,init = args.init)
         while agent.total_steps<args.n_steps:
             for _ in range(args.interval):
                 agent.train(train_dataset,writer)

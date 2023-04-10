@@ -51,19 +51,24 @@ python gripper_get_demo.py  --mode test  --task assembling-kits-3dtoolkit --n 10
 **Step 2.** Train a model e.g., Equivariant Transporter. Parameters are saved to the `checkpoints_{model}` directory. 
 
 ```shell
-python train.py --equ --lite --angle_lite --task assembling-kits-3dtoolkit --n_demos 100 --interval 1000 --n_step 10000 --init
+python train.py --equ --lite --angle_lite --task assembling-kits-3dtoolkit --n_demos 100 --interval 2500 --n_step 10000 --init
 ```
 
 **Step 3.** Evaluate the model trained for 200 iterations with 1 demos. Results are saved to the `test_{model}` directory.
 
 ```shell
-python gripper_test.py --equ --lite --angle_lite --task assembling-kits --n_demos 100 --n_steps 10000 --disp
+python gripper_test.py --equ --lite --angle_lite --task assembling-kits-3dtoolkit --n_demos 100 --n_steps 10000 --disp
 ```
 
 **Step 4.** Plot and print results.
 
 ```shell
 python plot.py --task assembling-kits --n_demos 100 --disp
+```
+
+**Optional.** Tracking training and validation losses with Tensorboard.
+```shell
+python -m tensorboard.main --logdir=logs  # Open the browser to where it tells you to.
 ```
 
 ## More description

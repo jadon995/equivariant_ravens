@@ -12,8 +12,11 @@ from e2cnn import gspaces
 import torch.nn.functional as F
 import e2cnn.nn as enn
 
-from equ_transport import Transport
-from equ_attention import Attention
+# from equ_transport import Transport
+# from equ_attention import Attention
+
+from gr_equi_transport import Transport
+from gr_equi_attention import Attention
 
 from raven import cameras
 from raven import utils
@@ -34,10 +37,10 @@ class TransporterAgent:
         self.pix_size = 0.003125
         self.in_shape = (320, 160, 6)
         self.cam_config = cameras.RealSenseD415.CONFIG
-        self.models_dir = os.path.join(root_dir, 'checkpoints_equ', self.name)
+        self.models_dir = os.path.join(root_dir, 'checkpoints_equ_gr', self.name)
         self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
         if device == 1:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
         else:
             device = torch.device('cpu')
 
