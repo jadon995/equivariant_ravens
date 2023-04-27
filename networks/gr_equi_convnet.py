@@ -94,7 +94,7 @@ class EquiGenerativeResNet(torch.nn.Module):
         self.conv_down_1 = torch.nn.Sequential(OrderedDict([
             ('enc-e2conv-1', nn.R2Conv(nn.FieldType(self.r2_act, n_input_channel * [self.r2_act.trivial_repr]),
                                        nn.FieldType(self.r2_act, self.l1_c * [self.repr]),
-                                       kernel_size=7, stride=1, padding=3, initialize=initialize)),
+                                       kernel_size=9, stride=1, padding=4, initialize=initialize)),
             ('enc-e2relu-1', nn.ReLU(nn.FieldType(self.r2_act, self.l1_c * [self.repr]), inplace=True))
         ]))
 
@@ -141,7 +141,7 @@ class EquiGenerativeResNet(torch.nn.Module):
         self.conv_up_3 = torch.nn.Sequential(OrderedDict([
             ('dec-e2conv-3', nn.R2Conv(nn.FieldType(self.r2_act, self.l1_c * [self.repr]),
                                        nn.FieldType(self.r2_act, self.l1_c * [self.repr]),
-                                       kernel_size=7, stride=1, padding=3, initialize=initialize)),
+                                       kernel_size=9, stride=1, padding=4, initialize=initialize)),
             ('dec-e2relu-3', nn.ReLU(nn.FieldType(self.r2_act, self.l1_c * [self.repr]), inplace=True))                                                 
         ]))
 
@@ -168,27 +168,26 @@ class equi_gr_res(torch.nn.Module):
                                                n_output_channel=middle_dim[0],
                                                n_middle_channels=middle_dim,
                                                N=N)
-        # # Trial 1: 16R -> 1T
-        # self.final = torch.nn.Sequential(
-        #     nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0]),
-        #               nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim),
-        #               kernel_size=3, padding=1, stride=1, initialize=False))
-
-        # Trial 2: 16R -> 16T -> 1T
+        # Trial 1: 16R -> 1T
         self.final = torch.nn.Sequential(
             nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0]),
-                      nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*middle_dim[0]),
-                      kernel_size=3, padding=1, stride=1, initialize=False),
-                    #   kernel_size=1, padding=0, stride=1, initialize=False),
-            nn.ReLU(nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*middle_dim[0]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*middle_dim[0]),
                       nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim),
-                      kernel_size=1, stride=1, initialize=False),
-        )
-        
+                      kernel_size=3, padding=1, stride=1, initialize=False))
+
+        # Trial 2: 16R -> 16T -> 1T
+        # self.final = torch.nn.Sequential(
+        #     nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0]),
+        #               nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*middle_dim[0]),
+        #               kernel_size=3, padding=1, stride=1, initialize=False),
+        #             #   kernel_size=1, padding=0, stride=1, initialize=False),
+        #     nn.ReLU(nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*middle_dim[0]), inplace=True),
+        #     nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*middle_dim[0]),
+        #               nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim),
+        #               kernel_size=1, stride=1, initialize=False),
+        # )
 
         for name, module in self.named_modules():
-            if isinstance(module, (nn.R2Conv, nn.R2ConvTransposed)):
+            if isinstance(module, (nn.R2Conv)):
                 if init:
                     print(name)
                     # nn.init.generalized_he_init(module.weights.data, module.basisexpansion)

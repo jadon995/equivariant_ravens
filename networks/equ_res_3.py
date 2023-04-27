@@ -90,18 +90,22 @@ class EquResUNet(torch.nn.Module):
 
         self.conv_down_2 = torch.nn.Sequential(OrderedDict([
             ('enc-pool-2', nn.PointwiseMaxPool(nn.FieldType(self.r2_act, self.l1_c * [self.repr]), 2)),
+            # ('enc-pool-2', nn.PointwiseAvgPoolAntialiased(nn.FieldType(self.r2_act, self.l1_c * [self.repr]), sigma=0.66, stride=2)),
             ('enc-e2res-2', EquiResBlock(self.l1_c, self.l2_c, kernel_size=kernel_size, N=N, flip=flip, quotient=quotient, initialize=initialize)),
         ]))
         self.conv_down_4 = torch.nn.Sequential(OrderedDict([
             ('enc-pool-3', nn.PointwiseMaxPool(nn.FieldType(self.r2_act, self.l2_c * [self.repr]), 2)),
+            # ('enc-pool-3', nn.PointwiseAvgPoolAntialiased(nn.FieldType(self.r2_act, self.l2_c * [self.repr]), sigma=0.66, stride=2)),
             ('enc-e2res-3', EquiResBlock(self.l2_c, self.l3_c, kernel_size=kernel_size, N=N, flip=flip, quotient=quotient, initialize=initialize)),
         ]))
         self.conv_down_8 = torch.nn.Sequential(OrderedDict([
             ('enc-pool-4', nn.PointwiseMaxPool(nn.FieldType(self.r2_act, self.l3_c * [self.repr]), 2)),
+            # ('enc-pool-4', nn.PointwiseAvgPoolAntialiased(nn.FieldType(self.r2_act, self.l3_c * [self.repr]), sigma=0.66, stride=2)),
             ('enc-e2res-4', EquiResBlock(self.l3_c, self.l4_c, kernel_size=kernel_size, N=N, flip=flip, quotient=quotient, initialize=initialize)),
         ]))
         self.conv_down_16 = torch.nn.Sequential(OrderedDict([
             ('enc-pool-5', nn.PointwiseMaxPool(nn.FieldType(self.r2_act, self.l4_c * [self.repr]), 2)),
+            # ('enc-pool-5', nn.PointwiseAvgPoolAntialiased(nn.FieldType(self.r2_act, self.l4_c * [self.repr]), sigma=0.66, stride=2)),
             ('enc-e2res-5', EquiResBlock(self.l4_c, self.l4_c, kernel_size=kernel_size, N=N, flip=flip, quotient=quotient, initialize=initialize)),
         ]))
 
@@ -160,10 +164,21 @@ class dian_res(torch.nn.Module):
         super(dian_res, self).__init__()
         self.r2_act = gspaces.Rot2dOnR2(N=N)
         self.main_block = EquResUNet(n_input_channel=in_dim,n_output_channel=middle_dim[0],n_middle_channels=middle_dim,N=N)
-        self.final = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0]),
-                      nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim), kernel_size=3,padding=1,initialize=False))
         
+        # Original version
+        # self.final = torch.nn.Sequential(
+            # nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0]),
+                    #   nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim), kernel_size=3,padding=1,initialize=False))
+
+        # Vesrion Group pooling 
+        self.gpool = nn.GroupPooling(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0])) 
+        self.fcn = torch.nn.Sequential(
+            torch.nn.Conv2d(self.gpool.out_type.size, middle_dim[0], kernel_size=1, stride=1, padding=0),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Conv2d(middle_dim[0], out_dim, kernel_size=1, stride=1, padding=0),
+        )
+        self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
+
         for name, module in self.named_modules():
             if isinstance(module, nn.R2Conv):
                 if init:
@@ -173,6 +188,14 @@ class dian_res(torch.nn.Module):
                     pass
     
     def forward(self,x):
+        # original version
+        # out = self.main_block(x)
+        # out = self.final(out)
+
+        # Vesrion Group pooling 
         out = self.main_block(x)
-        out = self.final(out)
+        out = self.gpool(out)
+        out = out.tensor
+        out = self.fcn(out)
+        out = nn.GeometricTensor(out, self.out_type)
         return x,out

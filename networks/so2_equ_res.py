@@ -5,7 +5,8 @@ import torch.nn.functional as F
 from collections import OrderedDict
 
 class SO2ResBlock(torch.nn.Module):
-    def __init__(self, input_channels, output_channels, kernel_size, N, irreps=[(f,) for f in range(4)], flip=False, quotient=False, initialize=True) :
+    def __init__(self, input_channels, output_channels, kernel_size, N, 
+                 irreps=[(f,) for f in range(4)], flip=False, quotient=False, initialize=True) :
         super(SO2ResBlock, self).__init__()
 
         if flip:
@@ -26,12 +27,12 @@ class SO2ResBlock(torch.nn.Module):
         feat_type_out = nn.FieldType(self.r2_act, [self.rho] * output_channels)
 
         self.layer1 = nn.SequentialModule(
-            nn.R2Conv(feat_type_in, feat_type_out, kernel_size=kernel_size, padding=(kernel_size-1) // 2, initialize=initialize),
+            nn.R2Conv(feat_type_in, feat_type_out, kernel_size=kernel_size, padding=(kernel_size-1) // 2, bias=False, initialize=initialize),
             nn.FourierELU(self.r2_act, output_channels, irreps=irreps, N=16, inplace=True),
         )
 
         self.layer2 = nn.SequentialModule(
-            nn.R2Conv(feat_type_out, feat_type_out, kernel_size=kernel_size, padding=(kernel_size-1) // 2, initialize=initialize),
+            nn.R2Conv(feat_type_out, feat_type_out, kernel_size=kernel_size, padding=(kernel_size-1) // 2, bias=False, initialize=initialize),
         )
 
         self.activation = nn.FourierELU(self.r2_act, output_channels, irreps=irreps, N=16, inplace=True)
@@ -39,7 +40,8 @@ class SO2ResBlock(torch.nn.Module):
         self.upscale = None
         if input_channels != output_channels:
             self.upscale = nn.SequentialModule(
-                nn.R2Conv(feat_type_in, feat_type_out, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, initialize=initialize),
+                # nn.R2Conv(feat_type_in, feat_type_out, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, bias=False, initialize=initialize),
+                nn.R2Conv(feat_type_in, feat_type_out, kernel_size=1, padding=0, bias=False, initialize=initialize),
             )
     
     def forward(self, x_in):
@@ -51,7 +53,7 @@ class SO2ResBlock(torch.nn.Module):
             out += self.upscale(residual)
         else:
             out += residual
-        out = self.activation(out)
+        # out = self.activation(out)
 
         return out
 
@@ -87,13 +89,13 @@ class SO2ResUnet(torch.nn.Module):
         self.l3_c = n_middle_channels[2]
         self.l4_c = n_middle_channels[3]
 
-        self.irreps = [(f,) for f in range(4)]
+        self.irreps = [(f,) for f in range(5)]
         self.rho = self.r2_act.fibergroup.spectral_regular_representation(*(self.irreps), name=None)
         
         self.conv_down_1 = torch.nn.Sequential(OrderedDict([
             ('enc-e2conv-0', nn.R2Conv(nn.FieldType(self.r2_act, n_input_channel * [self.r2_act.trivial_repr]),
                                        nn.FieldType(self.r2_act, self.l1_c * [self.rho]),
-                                       kernel_size=3, padding=1, initialize=initialize)),
+                                       kernel_size=3, padding=1, bias=False, initialize=initialize)),
             ('enc-e2relu-0', nn.FourierELU(self.r2_act, self.l1_c, irreps=self.irreps, N=16, inplace=True)),
             ('enc-e2res-1', SO2ResBlock(self.l1_c, self.l1_c, kernel_size=kernel_size, N=N, irreps=self.irreps, flip=flip, quotient=quotient, initialize=initialize)),        
         ]))
@@ -185,36 +187,53 @@ class so2_res(torch.nn.Module):
                                      n_output_channel=middle_dim[0],
                                      n_middle_channels=middle_dim,
                                      N=N)
-        irreps = [(f,) for f in range(4)]
+        irreps = [(f,) for f in range(5)]
         rho = self.r2_act.fibergroup.spectral_regular_representation(*irreps, name=None)
 
         ## Trial One: 16IR -> 1T
         # self.final = torch.nn.Sequential(
             # nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
                         # nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim),
-                        # kernel_size=3,padding=1,initialize=False))
+                        # kernel_size=3, padding=1, bias=False, initialize=False))
         
         ## Trial Two: 16IR -> 1IR -> 1T
-        self.final = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
-                      nn.FieldType(self.r2_act, [rho]*out_dim),
-                      kernel_size=3,padding=1,initialize=False),
-            nn.FourierELU(self.r2_act, out_dim, irreps=irreps, N=16, inplace=True),
-            nn.R2Conv(nn.FieldType(self.r2_act, [rho]*out_dim),
-                      nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim), 
-                      kernel_size=1,padding=0,initialize=False)
-        )
+        # self.final = torch.nn.Sequential(
+        #     nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
+        #               nn.FieldType(self.r2_act, [rho]*out_dim),
+        #               kernel_size=3, padding=1, bias=False, initialize=False),
+        #     nn.FourierELU(self.r2_act, out_dim, irreps=irreps, N=16, inplace=True),
+        #     nn.R2Conv(nn.FieldType(self.r2_act, [rho]*out_dim),
+        #               nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim), 
+        #               kernel_size=1, padding=0, bias=False, initialize=False)
+        # )
 
         # Trial Three: 16IR -> 16T -> 1T
         # self.final = torch.nn.Sequential(
         #     nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
         #               nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*middle_dim[0]),
-        #               kernel_size=3,padding=1,initialize=False),
+        #               kernel_size=3, padding=1, bias=False, initialize=False),
         #     nn.ELU(nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*middle_dim[0]), inplace=True),
         #     nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*middle_dim[0]),
         #               nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim), 
-        #               kernel_size=1,padding=0,initialize=False)
+        #               kernel_size=1, padding=0, bias=False, initialize=False)
         # )
+
+        ## Trial Four: 16IR (Avg Pool)-> 16 -> 1
+        ftgpool = nn.FourierELU(self.r2_act, middle_dim[0], irreps=irreps, 
+                                out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+        self.invariant_map = nn.SequentialModule(
+            nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
+                      ftgpool.in_type,
+                      kernel_size=3, padding=1, bias=False, initialize=False),
+            ftgpool
+        )
+        self.fcn = torch.nn.Sequential(
+            torch.nn.Conv2d(ftgpool.out_type.size, middle_dim[1], kernel_size=1, stride=1, padding=0),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Conv2d(middle_dim[1], out_dim, kernel_size=1, stride=1, padding=0),
+            # torch.nn.Conv2d(ftgpool.out_type.size, out_dim, kernel_size=1),
+        )
+        self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
     
         for name, module in self.named_modules():
             if isinstance(module, nn.R2Conv):
@@ -226,8 +245,15 @@ class so2_res(torch.nn.Module):
                     pass
     
     def forward(self,x):
+        # out = self.main_block(x)
+        # out = self.final(out)
+
+        # Trial Four: 16IR -> 16 -> 1
         out = self.main_block(x)
-        out = self.final(out)
+        out = self.invariant_map(out)
+        out = out.tensor
+        out = self.fcn(out)
+        out = nn.GeometricTensor(out, self.out_type)
         return x,out
     
 # model = so2_res(6,3,-1,(16, 32, 64, 128),True).to(device)

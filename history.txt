@@ -1,29 +1,37 @@
-equ-tn (2.8G)								70%
+equ-tn (2.8G)								                    70%
 
 relu + no drop out + one activation in residual block 			48%
-mish + 0.1 drop out + two activation in residual block(pre)  		46%
+mish + 0.1 drop out + two activation in residual block(pre)  	46%
 
-equ_grconv (3.2G)							34%
+equ_grconv (3.2G)							                    34%
 
 relu + 0 dropout + one act_fn in RB + batch norm (gr v1)		17%
 
-equ_grconv (2.7G) bottleneck in RB					31%
+equ_grconv (2.7G) bottleneck in RB					            31%
 
-so2_equ (4.5G) 16IR -> 1T						56%
+so2_equ (4.5G) 16IR -> 1T						                56%
 
-equ_grconv (4.8G) k=3 16R -> 1T 					68%
+equ_grconv(4.8G) k=3 16R -> 1T 		     			            68%
 
-so2_equ2  16IR -> 1IR -> T(4.5G)					62%	
+so2_equ2  16IR -> 1IR -> T(4.5G)					            62%	
 
-so2_equ3 16IR -> 16T ->  1T						27%
+so2_equ3 16IR->16T->1T						                    27%
 
-equ_grconv k=3 16R -> 16T ->  1T						68%
+equ_grconv k=3 16R->16T->1T					                    68%
 
-so2_equ2 tensor_sum
+so2_equ2 tensor_sum                                             57%                                             
 
-equ_grconv k=7 k=3  16R -> 1T  (32,64,128)--> (16, 32, 64) 							
+equ_grconv_lite(2G) k=3 16R->1T(conv3) (32,64,128)-->(16,32,64)   			
 
+equ-tn maxp->pwavgp                                             68%
 
+equ-tn group_pool                                               72%
+
+so2_equ4 group_avg_pool range(5)                                67%
+
+so2_equ4 gap res(1+1x1)                                         69%
+
+so2_equ4 gap res(1+1x1) (8,16,32,64)
 
 mish + 0.1 drop out + one act_fn in RB + batch norm (gr v2)
 

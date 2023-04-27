@@ -36,7 +36,8 @@ class Attention:
           self.model = equi_gr_res(in_dim=6,out_dim=1,N=4, middle_dim=(16, 32, 64),init=init).to(self.device)
         else:
           # self.model = dian_res(in_dim=6,out_dim=1,N=4,middle_dim=(32, 64, 128, 256),init=init).to(self.device)
-          self.model = equi_gr_res(in_dim=6,out_dim=1,N=4, middle_dim=(64, 128, 256),init=init).to(self.device)
+          # self.model = equi_gr_res(in_dim=6,out_dim=1,N=4, middle_dim=(64, 128, 256),init=init).to(self.device)
+          self.model = equi_gr_res(in_dim=6,out_dim=1,N=4, middle_dim=(32, 64, 128),init=init).to(self.device)
         if angle_lite:
           self.angle_model = lite_pick_angle(init=init).to(self.device)
           self.crop_size = 64

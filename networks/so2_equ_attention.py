@@ -32,6 +32,7 @@ class Attention:
         
         if lite:
           self.model = so2_res(in_dim=6,out_dim=1,N=-1,middle_dim=(16, 32, 64, 128),init=init).to(self.device)
+          # self.model = so2_res(in_dim=6,out_dim=1,N=-1,middle_dim=(8, 16, 32, 64),init=init).to(self.device)
         else:
           self.model = so2_res(in_dim=6,out_dim=1,N=-1,middle_dim=(32, 64, 128, 256),init=init).to(self.device)
         if angle_lite:
