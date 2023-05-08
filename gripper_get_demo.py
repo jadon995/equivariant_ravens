@@ -86,14 +86,17 @@ def main():
         obs = env.reset()
         info = None
         reward = 0
-        for _ in range(max_steps):
+        for i in range(max_steps):
+            # wait more time for objects to settle down
+            extend_secs = 0 if i<max_steps-1 else 2
+
             act = agent.act(obs, info)
             # print('obs 0', obs['color'][0].shape, obs['color'][1].shape, obs['color'][2].shape)
             # print('obs 1', obs['depth'][0].shape, obs['depth'][0].shape, obs['depth'][0].shape)
             # print('act',act)
             # print('info',info)
             episode.append((obs, act, reward, info))
-            obs, reward, done, info = env.step(act)
+            obs, reward, done, info = env.step(act, extend_secs)
             # TODO FOR DEBUG CAHNGE DONE TO FALSE
             #done = False
             total_reward += reward

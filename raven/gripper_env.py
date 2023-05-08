@@ -213,7 +213,7 @@ class Environment(gym.Env):
     obs, _, _, _ = self.step()
     return obs
 
-  def step(self, action=None):
+  def step(self, action=None, extend_secs=0):
     """Execute action with specified primitive.
     Args:
       action: action to execute.
@@ -231,6 +231,11 @@ class Environment(gym.Env):
 
     # Step simulator asynchronously until objects settle.
     while not self.is_static:
+      p.stepSimulation()
+    
+    # wait for extra time for objects settling
+    t0 = time.time()
+    while (time.time() - t0) < extend_secs:
       p.stepSimulation()
 
     # Get task rewards.
