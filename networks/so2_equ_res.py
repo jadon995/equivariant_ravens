@@ -40,8 +40,8 @@ class SO2ResBlock(torch.nn.Module):
         self.upscale = None
         if input_channels != output_channels:
             self.upscale = nn.SequentialModule(
-                # nn.R2Conv(feat_type_in, feat_type_out, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, bias=False, initialize=initialize),
-                nn.R2Conv(feat_type_in, feat_type_out, kernel_size=1, padding=0, bias=False, initialize=initialize),
+                nn.R2Conv(feat_type_in, feat_type_out, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, bias=False, initialize=initialize),
+                # nn.R2Conv(feat_type_in, feat_type_out, kernel_size=1, padding=0, bias=False, initialize=initialize),
             )
     
     def forward(self, x_in):
@@ -53,7 +53,7 @@ class SO2ResBlock(torch.nn.Module):
             out += self.upscale(residual)
         else:
             out += residual
-        # out = self.activation(out)
+        out = self.activation(out)
 
         return out
 
@@ -219,22 +219,38 @@ class so2_res(torch.nn.Module):
         # )
 
         ## Trial Four: 16IR (Avg Pool)-> 16 -> 1
+        # ftgpool = nn.FourierELU(self.r2_act, middle_dim[0], irreps=irreps, 
+        #                         out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+        # self.invariant_map = nn.SequentialModule(
+        #     nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
+        #               ftgpool.in_type,
+        #               kernel_size=3, padding=1, bias=False, initialize=False),
+        #     ftgpool
+        # )
+        # self.fcn = torch.nn.Sequential(
+        #     torch.nn.Conv2d(ftgpool.out_type.size, middle_dim[1], kernel_size=1, stride=1, padding=0),
+        #     torch.nn.ReLU(inplace=True),
+        #     torch.nn.Conv2d(middle_dim[1], out_dim, kernel_size=1, stride=1, padding=0),
+        #     # torch.nn.Conv2d(ftgpool.out_type.size, out_dim, kernel_size=1),
+        # )
+        # self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
+
+        ## Trial Five: 16IR --(AvgP)--> 16 --> 1
         ftgpool = nn.FourierELU(self.r2_act, middle_dim[0], irreps=irreps, 
                                 out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
-        self.invariant_map = nn.SequentialModule(
-            nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
-                      ftgpool.in_type,
-                      kernel_size=3, padding=1, bias=False, initialize=False),
-            ftgpool
-        )
-        self.fcn = torch.nn.Sequential(
-            torch.nn.Conv2d(ftgpool.out_type.size, middle_dim[1], kernel_size=1, stride=1, padding=0),
-            torch.nn.ReLU(inplace=True),
-            torch.nn.Conv2d(middle_dim[1], out_dim, kernel_size=1, stride=1, padding=0),
-            # torch.nn.Conv2d(ftgpool.out_type.size, out_dim, kernel_size=1),
-        )
+        # self.final = torch.nn.Sequential(
+        #     ftgpool,
+        #     nn.R2Conv(ftgpool.out_type,
+        #               nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim),
+        #               kernel_size=3, padding=1, bias=True, initialize=False,),
+        # )
+        self.invariant_map = nn.SequentialModule(ftgpool)
         self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
-    
+
+        self.fcn = torch.nn.Sequential(
+            torch.nn.Conv2d(ftgpool.out_type.size, out_dim, kernel_size=3, stride=1,padding=1),
+        )
+
         for name, module in self.named_modules():
             if isinstance(module, nn.R2Conv):
                 if init:
@@ -245,10 +261,11 @@ class so2_res(torch.nn.Module):
                     pass
     
     def forward(self,x):
+        # gconv -> gconv
         # out = self.main_block(x)
         # out = self.final(out)
 
-        # Trial Four: 16IR -> 16 -> 1
+        # gconv -> conv -> gconv
         out = self.main_block(x)
         out = self.invariant_map(out)
         out = out.tensor
