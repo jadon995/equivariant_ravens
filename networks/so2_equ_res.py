@@ -3,7 +3,7 @@ from escnn import gspaces
 import escnn.nn as nn
 import torch.nn.functional as F
 from collections import OrderedDict
-# from escnn_extension.fourier_gapool import FourierGroupAvgPool
+from escnn_extension.fourier_gapool import FourierGroupAvgPool
 
 class SO2ResBlock(torch.nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size, N, 
@@ -241,19 +241,33 @@ class so2_res(torch.nn.Module):
         # self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
 
         ## Trial Five: 16IR --(AvgP)--> 16 --> 1
-        ftgpool = nn.FourierELU(self.r2_act, middle_dim[0], irreps=irreps, 
-                                out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
-        # ftgpool = FourierGroupAvgPool(self.r2_act, middle_dim[0], irreps=irreps,
-                                    #   out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
-        self.invariant_map = nn.SequentialModule(ftgpool)
+        # ftgpool = nn.FourierELU(self.r2_act, middle_dim[0], irreps=irreps, 
+        #                         out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+        # # ftgpool = FourierGroupAvgPool(self.r2_act, middle_dim[0], irreps=irreps,
+        #                             #   out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+        # self.invariant_map = nn.SequentialModule(ftgpool)
+        # self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
+
+        # self.fcn = torch.nn.Sequential(
+        #     # torch.nn.Conv2d(ftgpool.out_type.size, out_dim, kernel_size=3, stride=1,padding=1),
+        #     torch.nn.Conv2d(ftgpool.out_type.size, middle_dim[0], kernel_size=3, stride=1,padding=1),
+        #     torch.nn.ELU(inplace=True),
+        #     torch.nn.Conv2d(middle_dim[0], out_dim, kernel_size=1, stride=1, padding=0),
+        # )
+
+        # network 8
+        ftgapool = FourierGroupAvgPool(
+                        self.r2_act, out_dim, irreps=irreps,
+                        out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+        self.final = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
+                      nn.FieldType(self.r2_act, [rho]*out_dim),
+                      kernel_size=3, padding=1, bias=False, initialize=False),
+            ftgapool
+        )
+
         self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
 
-        self.fcn = torch.nn.Sequential(
-            # torch.nn.Conv2d(ftgpool.out_type.size, out_dim, kernel_size=3, stride=1,padding=1),
-            torch.nn.Conv2d(ftgpool.out_type.size, middle_dim[0], kernel_size=3, stride=1,padding=1),
-            torch.nn.ELU(inplace=True),
-            torch.nn.Conv2d(middle_dim[0], out_dim, kernel_size=1, stride=1, padding=0),
-        )
 
         for name, module in self.named_modules():
             if isinstance(module, nn.R2Conv):
@@ -270,10 +284,15 @@ class so2_res(torch.nn.Module):
         # out = self.final(out)
 
         # gconv -> conv -> gconv
+        # out = self.main_block(x)
+        # out = self.invariant_map(out)
+        # out = out.tensor
+        # out = self.fcn(out)
+        # out = nn.GeometricTensor(out, self.out_type)
+
         out = self.main_block(x)
-        out = self.invariant_map(out)
+        out = self.final(out)
         out = out.tensor
-        out = self.fcn(out)
         out = nn.GeometricTensor(out, self.out_type)
         return x,out
     
