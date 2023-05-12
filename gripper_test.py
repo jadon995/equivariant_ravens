@@ -148,10 +148,11 @@ def main(args):
                 obs = env.reset()
                 info = None
                 reward = 0
-                for _ in range(task.max_steps):
+                for k in range(task.max_steps):
+                    extend_secs = 0 if k<task.max_steps-1 else 2
                     act = agent.act(obs, info, goal)
                     #act = agent.act(obs, info)
-                    obs, reward, done, info = env.step(act)
+                    obs, reward, done, info = env.step(act, extend_secs=extend_secs)
                     total_reward += reward
                     print(f'Total Reward: {total_reward} Done: {done}')
                     if done:
