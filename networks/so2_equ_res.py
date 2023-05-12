@@ -238,17 +238,14 @@ class so2_res(torch.nn.Module):
         ## Trial Five: 16IR --(AvgP)--> 16 --> 1
         ftgpool = nn.FourierELU(self.r2_act, middle_dim[0], irreps=irreps, 
                                 out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
-        # self.final = torch.nn.Sequential(
-        #     ftgpool,
-        #     nn.R2Conv(ftgpool.out_type,
-        #               nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim),
-        #               kernel_size=3, padding=1, bias=True, initialize=False,),
-        # )
         self.invariant_map = nn.SequentialModule(ftgpool)
         self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
 
         self.fcn = torch.nn.Sequential(
-            torch.nn.Conv2d(ftgpool.out_type.size, out_dim, kernel_size=3, stride=1,padding=1),
+            # torch.nn.Conv2d(ftgpool.out_type.size, out_dim, kernel_size=3, stride=1,padding=1),
+            torch.nn.Conv2d(ftgpool.out_type.size, middle_dim[0], kernel_size=3, stride=1,padding=1),
+            torch.nn.ELU(inplace=True),
+            torch.nn.Conv2d(middle_dim[0], out_dim, kernel_size=1, stride=1, padding=0),
         )
 
         for name, module in self.named_modules():
