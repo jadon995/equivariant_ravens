@@ -3,10 +3,11 @@ from escnn import gspaces
 import escnn.nn as nn
 import torch.nn.functional as F
 from collections import OrderedDict
+# from escnn_extension.fourier_gapool import FourierGroupAvgPool
 
 class SO2ResBlock(torch.nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size, N, 
-                 irreps=[(f,) for f in range(4)], flip=False, quotient=False, initialize=True) :
+                 irreps=[(f,) for f in range(4)], flip=False, quotient=False, initialize=True, last_act = True):
         super(SO2ResBlock, self).__init__()
 
         if flip:
@@ -35,7 +36,9 @@ class SO2ResBlock(torch.nn.Module):
             nn.R2Conv(feat_type_out, feat_type_out, kernel_size=kernel_size, padding=(kernel_size-1) // 2, bias=False, initialize=initialize),
         )
 
-        self.activation = nn.FourierELU(self.r2_act, output_channels, irreps=irreps, N=16, inplace=True)
+        self.last_act =last_act
+        if self.last_act:
+            self.last_activation = nn.FourierELU(self.r2_act, output_channels, irreps=irreps, N=16, inplace=True)
 
         self.upscale = None
         if input_channels != output_channels:
@@ -53,7 +56,9 @@ class SO2ResBlock(torch.nn.Module):
             out += self.upscale(residual)
         else:
             out += residual
-        out = self.activation(out)
+        
+        if self.last_act:
+            out = self.last_activation(out)
 
         return out
 
@@ -134,7 +139,7 @@ class SO2ResUnet(torch.nn.Module):
         ]))
 
         self.conv_up_1 = torch.nn.Sequential(OrderedDict([
-            ('dec-e2res-2', SO2ResBlock(2*self.l1_c, n_output_channel, kernel_size=kernel_size, N=N, irreps=self.irreps, flip=flip, quotient=quotient, initialize=initialize)),
+            ('dec-e2res-2', SO2ResBlock(2*self.l1_c, n_output_channel, kernel_size=kernel_size, N=N, irreps=self.irreps, flip=flip, quotient=quotient, initialize=initialize, last_act=False)),
         ]))
         
         self.upsample_16_8 = nn.R2Upsampling(nn.FieldType(self.r2_act, self.l4_c * [self.rho]), 2)
@@ -238,6 +243,8 @@ class so2_res(torch.nn.Module):
         ## Trial Five: 16IR --(AvgP)--> 16 --> 1
         ftgpool = nn.FourierELU(self.r2_act, middle_dim[0], irreps=irreps, 
                                 out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+        # ftgpool = FourierGroupAvgPool(self.r2_act, middle_dim[0], irreps=irreps,
+                                    #   out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
         self.invariant_map = nn.SequentialModule(ftgpool)
         self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
 
