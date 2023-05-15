@@ -55,6 +55,7 @@ def main(args):
         #train_run = train_run+1
         name = f'{args.task}-{args.n_demos}-{train_run}'
         
+        writer = None
         #set tensorborad logger
         if not args.off_logger:
             curr_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
