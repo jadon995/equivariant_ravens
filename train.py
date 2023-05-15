@@ -41,6 +41,8 @@ parser.add_argument('--init', action='store_true', default=False)
 parser.add_argument('--grconv', action='store_true', default=False)
 parser.add_argument('--equ_grconv', action='store_true', default=False)
 parser.add_argument('--equ_so2', action='store_true', default=False)
+
+parser.add_argument('--off_logger', action='store_true', default=False)
 args = parser.parse_args()
 
 def main(args):
@@ -52,11 +54,13 @@ def main(args):
     #for train_run in range(1):
         #train_run = train_run+1
         name = f'{args.task}-{args.n_demos}-{train_run}'
+        
         #set tensorborad logger
-        curr_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-        log_dir = os.path.join(args.train_dir, 'logs', args.task,
-                               curr_time, 'train')
-        writer = tf.summary.create_file_writer(log_dir)
+        if not args.off_logger:
+            curr_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+            log_dir = os.path.join(args.train_dir, 'logs', args.task,
+                                   curr_time, 'train')
+            writer = tf.summary.create_file_writer(log_dir)
 
         # set seed
         np.random.seed(train_run+1)
