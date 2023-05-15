@@ -4,6 +4,7 @@ import escnn.nn as nn
 import torch.nn.functional as F
 from collections import OrderedDict
 from escnn_extension.fourier_gapool import FourierGroupAvgPool
+from escnn_extension.inverse_fourier_transform import IFTPointwist
 
 class SO2ResBlock(torch.nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size, N, 
@@ -256,18 +257,34 @@ class so2_res(torch.nn.Module):
         # )
 
         # network 8
-        ftgapool = FourierGroupAvgPool(
-                        self.r2_act, out_dim, irreps=irreps,
+        # ftgapool = FourierGroupAvgPool(
+        #                 self.r2_act, out_dim, irreps=irreps,
+        #                 out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+        # self.final = torch.nn.Sequential(
+        #     nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
+        #               nn.FieldType(self.r2_act, [rho]*out_dim),
+        #               kernel_size=3, padding=1, bias=False, initialize=False),
+        #     ftgapool
+        # )
+
+        # self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
+
+        iftpointwise = IFTPointwist(
+                        self.r2_act, middle_dim[0], irreps=irreps,
                         out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+        self.r2_act_out = gspaces.rot2dOnR2(N=16)
+        repr = self.r2_act_out.regular_repr
+
         self.final = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
-                      nn.FieldType(self.r2_act, [rho]*out_dim),
+            iftpointwise,
+            nn.R2Conv(nn.FieldType(self.r2_act_out, [repr]*middle_dim[0]),
+                      nn.FieldType(self.r2_act_out, [repr]*middle_dim[0]),
                       kernel_size=3, padding=1, bias=False, initialize=False),
-            ftgapool
+            nn.ReLU(nn.FieldType(self.r2_act_out, [repr]*middle_dim[0]), inplace=True),
+            nn.R2Conv(nn.FieldType(self.r2_act_out, [repr]*middle_dim[0]),
+                      nn.FieldType(self.r2_act_out, [self.r2_act_out.trivial_repr]*out_dim), 
+                      kernel_size=1, padding=0, bias=True, initialize=False)
         )
-
-        self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
-
 
         for name, module in self.named_modules():
             if isinstance(module, nn.R2Conv):
@@ -280,8 +297,8 @@ class so2_res(torch.nn.Module):
     
     def forward(self,x):
         # gconv -> gconv
-        # out = self.main_block(x)
-        # out = self.final(out)
+        out = self.main_block(x)
+        out = self.final(out)
 
         # gconv -> conv -> gconv
         # out = self.main_block(x)
@@ -290,10 +307,10 @@ class so2_res(torch.nn.Module):
         # out = self.fcn(out)
         # out = nn.GeometricTensor(out, self.out_type)
 
-        out = self.main_block(x)
-        out = self.final(out)
-        out = out.tensor
-        out = nn.GeometricTensor(out, self.out_type)
+        # out = self.main_block(x)
+        # out = self.final(out)
+        # out = out.tensor
+        # out = nn.GeometricTensor(out, self.out_type)
         return x,out
     
 # model = so2_res(6,3,-1,(16, 32, 64, 128),True).to(device)
