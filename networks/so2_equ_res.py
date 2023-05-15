@@ -139,7 +139,7 @@ class SO2ResUnet(torch.nn.Module):
         ]))
 
         self.conv_up_1 = torch.nn.Sequential(OrderedDict([
-            ('dec-e2res-2', SO2ResBlock(2*self.l1_c, n_output_channel, kernel_size=kernel_size, N=N, irreps=self.irreps, flip=flip, quotient=quotient, initialize=initialize, last_act=False)),
+            ('dec-e2res-2', SO2ResBlock(2*self.l1_c, n_output_channel, kernel_size=kernel_size, N=N, irreps=self.irreps, flip=flip, quotient=quotient, initialize=initialize)),
         ]))
         
         self.upsample_16_8 = nn.R2Upsampling(nn.FieldType(self.r2_act, self.l4_c * [self.rho]), 2)
