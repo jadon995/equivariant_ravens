@@ -269,11 +269,11 @@ class so2_res(torch.nn.Module):
 
         # self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
 
-        iftpointwise = IFTPointwist(
-                        self.r2_act, middle_dim[0], irreps=irreps,
-                        out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
-        self.r2_act_out = gspaces.rot2dOnR2(N=16)
+        # IR -> R -> T
+        self.r2_act_out = gspaces.rot2dOnR2(N=4)
         repr = self.r2_act_out.regular_repr
+        iftpointwise = IFTPointwist(self.r2_act, self.r2_act_out, middle_dim[0], irreps=irreps,
+                                    N=self.r2_act_out.regular_repr.size)        
 
         self.final = torch.nn.Sequential(
             iftpointwise,

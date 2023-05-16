@@ -35,12 +35,13 @@ class IFTPointwist(EquivariantModule):
     def __init__(
             self,
             gspace: GSpace,
+            out_space: GSpace,
             channels: int,
             irreps: List,
             *grid_args,
-            function: str = 'p_relu',
-            inplace: bool = True,
-            out_irreps: List = None,
+            # function: str = 'p_relu',
+            # inplace: bool = True,
+            # out_irreps: List = None,
             normalize: bool = True,
             **grid_kwargs
     ):
@@ -92,6 +93,7 @@ class IFTPointwist(EquivariantModule):
         """
 
         assert isinstance(gspace, GSpace)
+        assert isinstance(gspace, GSpace)
         
         super(IFTPointwist, self).__init__()
 
@@ -103,11 +105,10 @@ class IFTPointwist(EquivariantModule):
 
         self.in_type = FieldType(self.space, [self.rho] * channels)
 
-        N = 16
+        # output space and type
         out_channels = channels
-        self.out_space = rot2dOnR2(N=N)
+        self.out_space = out_space
         self.out_type = FieldType(self.out_space, out_channels * [self.out_space.regular_repr])
-
 
         # if out_irreps is None:
         #     # the representation in input is preserved
@@ -118,17 +119,17 @@ class IFTPointwist(EquivariantModule):
         #     self.out_type = FieldType(self.space, [self.rho_out] * channels)
         self.rho_out = self.rho
 
-        # retrieve the activation function to apply
-        if function == 'p_relu':
-            self._function = F.relu_ if inplace else F.relu
-        elif function == 'p_elu':
-            self._function = F.elu_ if inplace else F.elu
-        elif function == 'p_sigmoid':
-            self._function = torch.sigmoid_ if inplace else F.sigmoid
-        elif function == 'p_tanh':
-            self._function = torch.tanh_ if inplace else F.tanh
-        else:
-            raise ValueError('Function "{}" not recognized!'.format(function))
+        # # retrieve the activation function to apply
+        # if function == 'p_relu':
+        #     self._function = F.relu_ if inplace else F.relu
+        # elif function == 'p_elu':
+        #     self._function = F.elu_ if inplace else F.elu
+        # elif function == 'p_sigmoid':
+        #     self._function = torch.sigmoid_ if inplace else F.sigmoid
+        # elif function == 'p_tanh':
+        #     self._function = torch.tanh_ if inplace else F.tanh
+        # else:
+        #     raise ValueError('Function "{}" not recognized!'.format(function))
         
         kernel = _build_kernel(G, irreps)
         assert kernel.shape[0] == self.rho.size
