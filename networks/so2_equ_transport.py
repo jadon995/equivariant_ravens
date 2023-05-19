@@ -54,13 +54,13 @@ class Transport:
         # self.model_map = Wide_ResNet(16, 4, 0.2, initial_stride=1, N=6, f=False, r=0, num_classes=3).to(self.device)
         # self.model_kernel = Wide_ResNet(16, 4, 0.2, initial_stride=1, N=6, f=False, r=0, num_classes=3).to(self.device)
         if lite:
-            self.model_map = so2_res(in_dim=6, out_dim=3, N=-1, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
-            self.model_kernel = so2_res(in_dim=6, out_dim=3, N=-1, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
+            self.model_map = so2_res(in_dim=6, out_dim=3, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
+            self.model_kernel = so2_res(in_dim=6, out_dim=3, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
             # self.model_map = so2_res(in_dim=6, out_dim=3, N=-1, middle_dim=(8, 16, 32, 64), init=init).to(self.device)
             # self.model_kernel = so2_res(in_dim=6, out_dim=3, N=-1, middle_dim=(8, 16, 32, 64), init=init).to(self.device)
         else:
-            self.model_map = so2_res(in_dim=6, out_dim=3, N=-1, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
-            self.model_kernel = so2_res(in_dim=6, out_dim=3, N=-1, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
+            self.model_map = so2_res(in_dim=6, out_dim=3, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
+            self.model_kernel = so2_res(in_dim=6, out_dim=3, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
 
 
         self.parameter = list(self.model_map.parameters()) + list(self.model_kernel.parameters())

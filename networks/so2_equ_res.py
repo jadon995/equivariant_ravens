@@ -7,9 +7,11 @@ from escnn_extension.fourier_gapool import FourierGroupAvgPool
 from escnn_extension.inverse_fourier_transform import IFTPointwist
 
 class SO2ResBlock(torch.nn.Module):
-    def __init__(self, input_channels, output_channels, kernel_size, N, 
-                 irreps=[(f,) for f in range(4)], flip=False, quotient=False, initialize=True, last_act = True):
+    def __init__(self, input_channels, output_channels, kernel_size, N=-1, 
+                 irreps=[(f,) for f in range(4)], num_of_samples=16, flip=False, quotient=False, initialize=True, last_act = True):
         super(SO2ResBlock, self).__init__()
+
+        assert N == -1
 
         if flip:
             self.r2_act = gspaces.flipRot2dOnR2(N=N)
@@ -30,7 +32,7 @@ class SO2ResBlock(torch.nn.Module):
 
         self.layer1 = nn.SequentialModule(
             nn.R2Conv(feat_type_in, feat_type_out, kernel_size=kernel_size, padding=(kernel_size-1) // 2, bias=False, initialize=initialize),
-            nn.FourierELU(self.r2_act, output_channels, irreps=irreps, N=16, inplace=True),
+            nn.FourierELU(self.r2_act, output_channels, irreps=irreps, N=num_of_samples, inplace=True),
         )
 
         self.layer2 = nn.SequentialModule(
@@ -39,13 +41,12 @@ class SO2ResBlock(torch.nn.Module):
 
         self.last_act =last_act
         if self.last_act:
-            self.last_activation = nn.FourierELU(self.r2_act, output_channels, irreps=irreps, N=16, inplace=True)
+            self.last_activation = nn.FourierELU(self.r2_act, output_channels, irreps=irreps, N=num_of_samples, inplace=True)
 
         self.upscale = None
         if input_channels != output_channels:
             self.upscale = nn.SequentialModule(
                 nn.R2Conv(feat_type_in, feat_type_out, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, bias=False, initialize=initialize),
-                # nn.R2Conv(feat_type_in, feat_type_out, kernel_size=1, padding=0, bias=False, initialize=initialize),
             )
     
     def forward(self, x_in):
@@ -69,15 +70,21 @@ class SO2ResUnet(torch.nn.Module):
                  n_output_channel=16, 
                  n_middle_channels=(16, 32, 64, 128), 
                  kernel_size=3, 
-                 N=-1, 
+                 irreps=[(f,) for f in range(4)],
+                 num_of_samples=16,
                  flip=False, 
                  quotient=False, 
                  initialize=False):
         super(SO2ResUnet, self).__init__()
+
+        N = -1 # infinite group
         if flip:
             self.r2_act = gspaces.flipRot2dOnR2(N=N)
         else:
             self.r2_act = gspaces.rot2dOnR2(N=N)
+        
+        self.irreps = irreps
+        self.rho = self.r2_act.fibergroup.spectral_regular_representation(*(self.irreps), name=None)
         
         '''
         # if quotient:
@@ -94,20 +101,16 @@ class SO2ResUnet(torch.nn.Module):
         self.l2_c = n_middle_channels[1]
         self.l3_c = n_middle_channels[2]
         self.l4_c = n_middle_channels[3]
-
-        self.irreps = [(f,) for f in range(5)]
-        self.rho = self.r2_act.fibergroup.spectral_regular_representation(*(self.irreps), name=None)
         
         self.conv_down_1 = torch.nn.Sequential(OrderedDict([
             ('enc-e2conv-0', nn.R2Conv(nn.FieldType(self.r2_act, n_input_channel * [self.r2_act.trivial_repr]),
                                        nn.FieldType(self.r2_act, self.l1_c * [self.rho]),
                                        kernel_size=3, padding=1, bias=False, initialize=initialize)),
-            ('enc-e2relu-0', nn.FourierELU(self.r2_act, self.l1_c, irreps=self.irreps, N=16, inplace=True)),
+            ('enc-e2relu-0', nn.FourierELU(self.r2_act, self.l1_c, irreps=self.irreps, N=num_of_samples, inplace=True)),
             ('enc-e2res-1', SO2ResBlock(self.l1_c, self.l1_c, kernel_size=kernel_size, N=N, irreps=self.irreps, flip=flip, quotient=quotient, initialize=initialize)),        
         ]))
 
         self.conv_down_2 = torch.nn.Sequential(OrderedDict([
-            # ('enc-pool-2', nn.PointwiseMaxPoolAntialiased(nn.FieldType(self.r2_act, self.l1_c * [self.rho]), kernel_size=3, sigma=0.66, stride=2)),
             ('enc-pool-2', nn.PointwiseAvgPoolAntialiased(nn.FieldType(self.r2_act, self.l1_c * [self.rho]), sigma=0.66, stride=2)),
             ('enc-e2res-2', SO2ResBlock(self.l1_c, self.l2_c, kernel_size=kernel_size, N=N, irreps=self.irreps, flip=flip, quotient=quotient, initialize=initialize)),
         ]))
@@ -185,16 +188,20 @@ class SO2ResUnet(torch.nn.Module):
         return self.forwardDecoder(feature_map_1, feature_map_2, feature_map_4, feature_map_8, feature_map_16)
     
 class so2_res(torch.nn.Module):
-    def __init__(self,in_dim,out_dim,N=-1,middle_dim=(32, 64, 128, 256),init=False):
+    def __init__(self,in_dim,out_dim,middle_dim=(32, 64, 128, 256),init=False):
         super(so2_res, self).__init__()
-        N = -1
+
+        N = -1 # for a infinite group
         self.r2_act = gspaces.rot2dOnR2(N=N)
+        irreps = [(f,) for f in range(5)]
+        num_of_samples = 16
+
         self.main_block = SO2ResUnet(n_input_channel=in_dim,
                                      n_output_channel=middle_dim[0],
                                      n_middle_channels=middle_dim,
-                                     N=N)
-        irreps = [(f,) for f in range(5)]
-        rho = self.r2_act.fibergroup.spectral_regular_representation(*irreps, name=None)
+                                     irreps=irreps,
+                                     num_of_samples=num_of_samples)
+        # rho = self.r2_act.fibergroup.spectral_regular_representation(*irreps, name=None)
 
         ## Trial One: 16IR -> 1T
         # self.final = torch.nn.Sequential(
@@ -207,7 +214,7 @@ class so2_res(torch.nn.Module):
         #     nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
         #               nn.FieldType(self.r2_act, [rho]*out_dim),
         #               kernel_size=3, padding=1, bias=False, initialize=False),
-        #     nn.FourierELU(self.r2_act, out_dim, irreps=irreps, N=16, inplace=True),
+        #     nn.FourierELU(self.r2_act, out_dim, irreps=irreps, N=num_of_samples, inplace=True),
         #     nn.R2Conv(nn.FieldType(self.r2_act, [rho]*out_dim),
         #               nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim), 
         #               kernel_size=1, padding=0, bias=False, initialize=False)
@@ -226,7 +233,7 @@ class so2_res(torch.nn.Module):
 
         ## Trial Four: 16IR (Avg Pool)-> 16 -> 1
         # ftgpool = nn.FourierELU(self.r2_act, middle_dim[0], irreps=irreps, 
-        #                         out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+        #                         out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=num_of_samples)
         # self.invariant_map = nn.SequentialModule(
         #     nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
         #               ftgpool.in_type,
@@ -243,7 +250,7 @@ class so2_res(torch.nn.Module):
 
         ## SO-7: 16IR --(AvgP)--> 16 --> 1
         ftgpool = nn.FourierELU(self.r2_act, middle_dim[0], irreps=irreps, 
-                                out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+                                out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=num_of_samples, inplace=True)
         self.invariant_map = nn.SequentialModule(ftgpool)
 
         self.fcn = torch.nn.Sequential(
@@ -256,7 +263,7 @@ class so2_res(torch.nn.Module):
         # network 8
         # ftgapool = FourierGroupAvgPool(
         #                 self.r2_act, out_dim, irreps=irreps,
-        #                 out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=16)
+        #                 out_irreps=self.r2_act.fibergroup.bl_irreps(0), N=num_of_samples)
         # self.final = torch.nn.Sequential(
         #     nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
         #               nn.FieldType(self.r2_act, [rho]*out_dim),
