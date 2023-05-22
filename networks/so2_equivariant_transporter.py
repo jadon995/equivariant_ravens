@@ -27,8 +27,8 @@ import tensorflow as tf
 class TransporterAgent:
     """Agent that uses Transporter Networks."""
 
-    def __init__(self, name, task, root_dir, device=1, n_rotations=36, lite=False,  load=False,
-                 angle_lite=False,init=False):
+    def __init__(self, name, task, root_dir, device=0, n_rotations=36, lite=False,  load=False,
+                 angle_lite=False,init=False, postfix='so2', **irrep_kwargs):
         self.name = name
         self.task = task
         self.total_steps = 0
@@ -37,12 +37,12 @@ class TransporterAgent:
         self.pix_size = 0.003125
         self.in_shape = (320, 160, 6)
         self.cam_config = cameras.RealSenseD415.CONFIG
-        self.models_dir = os.path.join(root_dir, 'checkpoints_so2', self.name)
+        self.models_dir = os.path.join(root_dir, 'checkpoints_'+postfix, self.name)
         self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
-        if device == 1:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        else:
+        if device == -1:
             device = torch.device('cpu')
+        else:
+            device = torch.device("cuda:{}".format(device) if torch.cuda.is_available() else "cpu")
 
         self.device = device
 
@@ -53,7 +53,8 @@ class TransporterAgent:
             device=self.device,
             lite=lite,
             angle_lite=angle_lite,
-            init=init)
+            init=init,
+            **irrep_kwargs)
 
         self.transport = Transport(
             in_shape=self.in_shape,
@@ -62,7 +63,8 @@ class TransporterAgent:
             preprocess=utils.preprocess,
             device=self.device,
             lite=lite,
-            init=init)
+            init=init,
+            **irrep_kwargs)
 
         if load != False:
             # print('load pretained model checkpoint at {} step'.format(load))

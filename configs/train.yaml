@@ -1,0 +1,37 @@
+# data
+task: assembling-kits-3dtoolkit
+train_dir: '.'
+data_dir: '.'
+data_postfix: 'so2-7'               # Ckpt saved in 'checkpoints_{so2-7}' folder
+                                  # Test saved in 'test_{so2-7}' folder
+
+# model
+model: so2                        # model opt: [equ, femi, semi, #non, 
+                                        # tail, grconv, equ_grconv, so2]
+lite: True                        # Lite version of attention and transport model
+angle_lite: True                  # Lite version of pick angle model 
+init: True                        # Weight initialization
+load: 0                           # Pre-trained model iter; 0 means no loading
+
+so2:
+  resunet:
+    irrep: 3                      # irreps: [0, max_irreps]
+    sample: 16                    # sample no. for ift conversion
+
+# training & testing
+gpu_id: 1                         # -1 means cpu
+n_demos: 100                      # demo no for model training
+n_steps: 10000                    # total training iterations
+interval: 2500                    # checkpoint savings
+n_runs: 1                         # runs of training (different seeds)
+logging: True                     # logging the training info
+
+# testing
+root_dir: '.'
+assets_root: './raven/assets'
+disp: True
+continuous: False                 # not implemented
+shared_memory: False              # not important; related to pybullet
+entire: False                     # not important
+
+

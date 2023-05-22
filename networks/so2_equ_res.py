@@ -188,13 +188,18 @@ class SO2ResUnet(torch.nn.Module):
         return self.forwardDecoder(feature_map_1, feature_map_2, feature_map_4, feature_map_8, feature_map_16)
     
 class so2_res(torch.nn.Module):
-    def __init__(self,in_dim,out_dim,middle_dim=(32, 64, 128, 256),init=False):
+    def __init__(self,in_dim,out_dim,middle_dim=(32, 64, 128, 256),init=False, **irrep_kwargs):
         super(so2_res, self).__init__()
+
+        max_irrep = irrep_kwargs['irrep']
+        num_of_samples = irrep_kwargs['sample']
 
         N = -1 # for a infinite group
         self.r2_act = gspaces.rot2dOnR2(N=N)
-        irreps = [(f,) for f in range(5)]
-        num_of_samples = 16
+        irreps = [(f,) for f in range(max_irrep+1)]
+
+        for key, value in irrep_kwargs.items():
+            print(key, value)
 
         self.main_block = SO2ResUnet(n_input_channel=in_dim,
                                      n_output_channel=middle_dim[0],

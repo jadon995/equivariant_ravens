@@ -1,5 +1,7 @@
 import datetime
 import os
+import yaml
+from easydict import EasyDict as edict
 import numpy as np
 #from equ_transporter import TransporterAgent as equ_agent
 from raven.dataset import Dataset
@@ -29,33 +31,42 @@ from networks.so2_equivariant_transporter import TransporterAgent as so2_equ_age
 
 import faulthandler; faulthandler.enable()
 
-parser = argparse.ArgumentParser(description='ravens_test')
-parser.add_argument('--root_dir', type=str, default='.')
-parser.add_argument('--data_dir', type=str, default='.')
-parser.add_argument('--assets_root', type=str, default='./raven/assets')
-parser.add_argument('--task', type=str, default='block-insertion')
-parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
-parser.add_argument('--n_steps', type=int,default=1000)# the train steps per epoch
-parser.add_argument('--n_runs', type=int,default=1)
-#parser.add_argument('--interval', type=int,default=1000)
-parser.add_argument('--gpu', type=int, default=1)
-parser.add_argument('--disp', action='store_true', default=False)
-parser.add_argument('--shared_memory', action='store_true', default=False)
-parser.add_argument('--equ', action='store_true', default=False)
-parser.add_argument('--lite', action='store_true', default=False)
-parser.add_argument('--angle_lite', action='store_true', default=False)
-parser.add_argument('--continuous', action='store_true', default=False)
-parser.add_argument('--entire', action='store_true', default=False)
-parser.add_argument('--femi', action='store_true', default=False)
-parser.add_argument('--semi', action='store_true', default=False)
-parser.add_argument('--non', action='store_true', default=False)
-parser.add_argument('--tail', action='store_true', default=False)
-parser.add_argument('--grconv', action='store_true', default=False)
-parser.add_argument('--equ_grconv', action='store_true', default=False)
-parser.add_argument('--equ_so2', action='store_true', default=False)
-args = parser.parse_args()
+# parser = argparse.ArgumentParser(description='ravens_test')
+# parser.add_argument('--root_dir', type=str, default='.')
+# parser.add_argument('--data_dir', type=str, default='.')
+# parser.add_argument('--assets_root', type=str, default='./raven/assets')
+# parser.add_argument('--task', type=str, default='block-insertion')
+# parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
+# parser.add_argument('--n_steps', type=int,default=1000)# the train steps per epoch
+# parser.add_argument('--n_runs', type=int,default=1)
+# #parser.add_argument('--interval', type=int,default=1000)
+# parser.add_argument('--gpu', type=int, default=1)
+# parser.add_argument('--disp', action='store_true', default=False)
+# parser.add_argument('--shared_memory', action='store_true', default=False)
+# parser.add_argument('--equ', action='store_true', default=False)
+# parser.add_argument('--lite', action='store_true', default=False)
+# parser.add_argument('--angle_lite', action='store_true', default=False)
+# parser.add_argument('--continuous', action='store_true', default=False)
+# parser.add_argument('--entire', action='store_true', default=False)
+# parser.add_argument('--femi', action='store_true', default=False)
+# parser.add_argument('--semi', action='store_true', default=False)
+# parser.add_argument('--non', action='store_true', default=False)
+# parser.add_argument('--tail', action='store_true', default=False)
+# parser.add_argument('--grconv', action='store_true', default=False)
+# parser.add_argument('--equ_grconv', action='store_true', default=False)
+# parser.add_argument('--equ_so2', action='store_true', default=False)
+# args = parser.parse_args()
 
-def main(args):
+def main():
+    # load arguments
+    parser = argparse.ArgumentParser(description='ravens')
+    parser.add_argument('--config_file', type=str, required=True, help='the name of configuration file')
+    arguments = parser.parse_args()
+    config_name = arguments.config_file
+
+    with open(os.path.join('configs', config_name), 'r') as file:
+        config_data = yaml.load(file, Loader=yaml.FullLoader)
+    args = edict(config_data)
 
     # Initialize environment and task.
     env = Environment(
@@ -103,30 +114,34 @@ def main(args):
         cudnn.deterministic = True
         # Initial Agent
         #agent = task.oracle(env, steps_per_seg=3)
-        if args.equ:
+        if args.model == 'equ':
             print('equi agent')
-            agent = equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        if args.femi:
-            print('femi_agent')
-            agent = femi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        if args.semi:
-            print('semi_agent')
-            agent = semi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite)
-        if args.non:
-            print('no equivariant agent')
-            agent = non_equi_agent(name=name,task=args.task,root_dir=args.data_dir)
-        if args.tail:
-            print('equvairant agent with tail network')
-            agent = equ_agent_tail(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        if args.grconv:
-            print('no equivariant grconv agent')
-            agent = gr_agent(name=name,task=args.task,root_dir=args.data_dir)
-        if args.equ_grconv:
-            print('equivariant grconv agent')
-            agent = gr_equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        if args.equ_so2:
+            agent = equ_agent(name=name,task=args.task,root_dir=args.data_dir, device=args.gpu_id,
+                               lite=args.lite, angle_lite = args.angle_lite, postfix=args.data_postfix)
+        # if args.femi:
+        #     print('femi_agent')
+        #     agent = femi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+        # if args.semi:
+        #     print('semi_agent')
+        #     agent = semi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite)
+        # if args.non:
+        #     print('no equivariant agent')
+        #     agent = non_equi_agent(name=name,task=args.task,root_dir=args.data_dir)
+        # if args.tail:
+        #     print('equvairant agent with tail network')
+        #     agent = equ_agent_tail(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+        # if args.grconv:
+        #     print('no equivariant grconv agent')
+        #     agent = gr_agent(name=name,task=args.task,root_dir=args.data_dir)
+        # if args.equ_grconv:
+        #     print('equivariant grconv agent')
+        #     agent = gr_equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+        if args.model == 'so2':
             print('so(2) equivariant agent')
-            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+            irrep_kwargs = {'irrep': args.so2.resunet.irrep, 'sample': args.so2.resunet.sample}
+            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,
+                                  device=args.gpu_id,lite=args.lite,angle_lite=args.angle_lite, 
+                                  postfix=args.data_postfix,**irrep_kwargs)
     
         if args.entire ==True:
             n_steps = [20000,15000,5000,2000]
@@ -160,50 +175,13 @@ def main(args):
                 results.append((total_reward, info))
     
                 # Save results.
-                if args.equ:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_equi')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_equi'))
-                  
-                  with open(os.path.join(args.root_dir, 'test_equi', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                if args.non:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_non_equi')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_non_equi'))
-                  with open(os.path.join(args.root_dir, 'test_non_equi', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                      
-                if args.femi:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_femi')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_femi'))
-                  with open(os.path.join(args.root_dir, 'test_femi', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                      
-                if args.semi:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_semi')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_semi'))
-                  with open(os.path.join(args.root_dir, 'test_semi', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                if args.tail:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_tail')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_tail'))
-                  with open(os.path.join(args.root_dir, 'test_tail', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                if args.grconv:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_gr')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_gr'))
-                  with open(os.path.join(args.root_dir, 'test_gr', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                if args.equ_grconv:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_equ_gr')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_equ_gr'))
-                  with open(os.path.join(args.root_dir, 'test_equ_gr', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                if args.equ_so2:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_so2_equ')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_so2_equ'))
-                  with open(os.path.join(args.root_dir, 'test_so2_equ', f'{name}-{test_step}.pkl'),'wb') as f:
+                test_dir = 'test_{}'.format(args.data_postfix)
+                if not os.path.exists(os.path.join(args.root_dir, test_dir)):
+                    os.makedirs(os.path.join(args.root_dir, test_dir))
+                with open(os.path.join(args.root_dir, test_dir, f'{name}-{test_step}.pkl'),'wb') as f:
                     pickle.dump(results, f)
+                
                 
 
 if __name__=="__main__":
-    main(args)
+    main()

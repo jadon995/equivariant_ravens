@@ -15,7 +15,8 @@ from pick_angle_model_2 import EquRes as pick_angle
 
 
 class Attention:
-    def __init__(self,in_shape,n_rotations,preprocess,device,lite=True,angle_lite=False,init=False):
+    def __init__(self,in_shape,n_rotations,preprocess,device,lite=True,
+                 angle_lite=False,init=False, **irrep_kwargs):
         # TODO BY HAOJIE: add lite model
         self.device = device
         self.preprocess = preprocess
@@ -31,10 +32,11 @@ class Attention:
         self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
         
         if lite:
-          self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(16, 32, 64, 128),init=init).to(self.device)
-          # self.model = so2_res(in_dim=6,out_dim=1,N=-1,middle_dim=(8, 16, 32, 64),init=init).to(self.device)
+          self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(16, 32, 64, 128),
+                               init=init,**irrep_kwargs).to(self.device)
         else:
-          self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(32, 64, 128, 256),init=init).to(self.device)
+          self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(32, 64, 128, 256),
+                               init=init,**irrep_kwargs).to(self.device)
         if angle_lite:
           self.angle_model = lite_pick_angle(init=init).to(self.device)
           self.crop_size = 64
