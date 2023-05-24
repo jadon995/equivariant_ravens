@@ -12,6 +12,7 @@ import e2cnn.nn as enn
 from so2_equ_res import so2_res
 from pick_angle_model import EquRes as lite_pick_angle
 from pick_angle_model_2 import EquRes as pick_angle
+from so2_pick_angle_model import SO2ResNet as so2_pick_angle
 
 
 class Attention:
@@ -38,7 +39,8 @@ class Attention:
           self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(32, 64, 128, 256),
                                init=init,**irrep_kwargs).to(self.device)
         if angle_lite:
-          self.angle_model = lite_pick_angle(init=init).to(self.device)
+          # self.angle_model = lite_pick_angle(init=init).to(self.device)
+          self.angle_model = so2_pick_angle(init=init,**irrep_kwargs).to(self.device) 
           self.crop_size = 64
         else:
           self.angle_model = pick_angle(init=init).to(self.device)
