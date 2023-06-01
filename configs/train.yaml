@@ -1,8 +1,9 @@
 # data
 task: assembling-kits-3dtoolkit
+n_rotations: 36                   # Number of rotation classifications
 train_dir: '.'
 data_dir: '.'
-data_postfix: 'so2-7'               # Ckpt saved in 'checkpoints_{so2-7}' folder
+data_postfix: 'so2'               # Ckpt saved in 'checkpoints_{so2-7}' folder
                                   # Test saved in 'test_{so2-7}' folder
 
 # model
@@ -19,12 +20,12 @@ so2:
     sample: 16                    # sample no. for ift conversion
 
 # training & testing
-gpu_id: 1                         # -1 means cpu
+gpu_id: 0                         # -1 means cpu
 n_demos: 100                      # demo no for model training
 n_steps: 10000                    # total training iterations
-interval: 2500                    # checkpoint savings
+interval: 10000                    # checkpoint savings
 n_runs: 1                         # runs of training (different seeds)
-logging: True                     # logging the training info
+logging: False                     # logging the training info
 
 # testing
 root_dir: '.'

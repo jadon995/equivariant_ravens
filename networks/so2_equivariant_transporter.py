@@ -48,7 +48,7 @@ class TransporterAgent:
 
         self.attention = Attention(
             in_shape=self.in_shape,
-            n_rotations=1,
+            n_rotations=self.n_rotations,
             preprocess=utils.preprocess,
             device=self.device,
             lite=lite,

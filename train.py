@@ -90,7 +90,7 @@ def main():
         # train agent and save snapshot
         if args.model == 'equ':
             print('equvairant agent')
-            agent = equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,
+            agent = equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,n_rotations=args.n_rotations,
                               lite=args.lite,load=args.load, angle_lite=args.angle_lite,init=args.init,
                               postfix=args.data_postfix)
         # if args.femi:
@@ -115,7 +115,7 @@ def main():
             print('so(2) equvariant agent')
             irrep_kwargs = {'irrep': args.so2.resunet.irrep, 
                             'sample': args.so2.resunet.sample}
-            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,
+            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,n_rotations=args.n_rotations,
                                   lite=args.lite,load=args.load,angle_lite=args.angle_lite,init=args.init,
                                   postfix=args.data_postfix,**irrep_kwargs)
         while agent.total_steps<args.n_steps:

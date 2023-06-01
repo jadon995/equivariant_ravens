@@ -116,8 +116,8 @@ def main():
         #agent = task.oracle(env, steps_per_seg=3)
         if args.model == 'equ':
             print('equi agent')
-            agent = equ_agent(name=name,task=args.task,root_dir=args.data_dir, device=args.gpu_id,
-                               lite=args.lite, angle_lite = args.angle_lite, postfix=args.data_postfix)
+            agent = equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,n_rotations=args.n_rotations,
+                              lite=args.lite,angle_lite=args.angle_lite,postfix=args.data_postfix)
         # if args.femi:
         #     print('femi_agent')
         #     agent = femi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
@@ -139,9 +139,8 @@ def main():
         if args.model == 'so2':
             print('so(2) equivariant agent')
             irrep_kwargs = {'irrep': args.so2.resunet.irrep, 'sample': args.so2.resunet.sample}
-            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,
-                                  device=args.gpu_id,lite=args.lite,angle_lite=args.angle_lite, 
-                                  postfix=args.data_postfix,**irrep_kwargs)
+            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,n_rotations=args.n_rotations,
+                                  lite=args.lite,angle_lite=args.angle_lite,postfix=args.data_postfix,**irrep_kwargs)
     
         if args.entire ==True:
             n_steps = [20000,15000,5000,2000]

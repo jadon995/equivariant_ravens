@@ -34,10 +34,10 @@ class Attention:
         else:
           self.model = dian_res(in_dim=6,out_dim=1,N=4,middle_dim=(32, 64, 128, 256),init=init).to(self.device)
         if angle_lite:
-          self.angle_model = lite_pick_angle(init=init).to(self.device)
+          self.angle_model = lite_pick_angle(init=init,N=self.n_rotations).to(self.device)
           self.crop_size = 64
         else:
-          self.angle_model = pick_angle(init=init).to(self.device)
+          self.angle_model = pick_angle(init=init,N=self.n_rotations).to(self.device)
           self.crop_size = 96
         
         self.pad_size_2 = int(self.crop_size / 2)
@@ -110,12 +110,12 @@ class Attention:
           theta = theta -np.pi
         # angle label
         # dgree interval: 10
-        theta_i = theta / (2 * np.pi / 36)
+        theta_i = theta / (2 * np.pi / self.n_rotations)
         # theta_i is in range [0,17]
-        theta_i = np.int32(np.round(theta_i)) % 18
+        theta_i = np.int32(np.round(theta_i)) % (self.n_rotations/2)
         label_theta = torch.as_tensor(theta_i,dtype=torch.long,device=self.device).unsqueeze(dim=0)
         # location label
-        label_size = (self.n_rotations,) + in_img.shape[:2]
+        label_size = (1,) + in_img.shape[:2]
         label = torch.zeros(label_size,dtype=torch.long,device=self.device)
         label[0, p[0], p[1],] = 1
         label = label.reshape(-1)
