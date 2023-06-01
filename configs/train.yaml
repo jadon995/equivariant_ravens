@@ -3,7 +3,7 @@ task: assembling-kits-3dtoolkit
 n_rotations: 360                  # Number of rotation classifications
 train_dir: '.'
 data_dir: '.'
-data_postfix: 'so2'               # Ckpt saved in 'checkpoints_{so2-7}' folder
+data_postfix: 'so2-360'               # Ckpt saved in 'checkpoints_{so2-7}' folder
                                   # Test saved in 'test_{so2-7}' folder
 
 # model
