@@ -69,7 +69,7 @@ class SO2ResNet(torch.nn.Module):
     def __init__(self, 
                  n_input_channel=6,
                  n_output_channel=1,
-                 n_middle_channels=(16, 32, 16, 8),
+                 n_middle_channels=(16, 32, 16, 8, 4),
                  kernel_size=7,
                  N=36, 
                  flip=False,
@@ -97,6 +97,7 @@ class SO2ResNet(torch.nn.Module):
         self.l2_c = n_middle_channels[1]
         self.l3_c = n_middle_channels[2]
         self.l4_c = n_middle_channels[3]
+        self.l5_c = n_middle_channels[4]
 
         self.conv_down_1 = torch.nn.Sequential(OrderedDict([
             ('enc-e2conv-0', nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*n_input_channel),
@@ -132,27 +133,49 @@ class SO2ResNet(torch.nn.Module):
         #     ('enc-e2conv-5', nn.FourierELU(self.r2_act, 8, irreps=self.irreps, N=num_of_samples, inplace=True)),
         # ]))
 
+        # # 16x16x18IR -> 10x10x8IR
+        # self.final_0 = torch.nn.Sequential(OrderedDict([
+        #     ('enc-final-0', nn.R2Conv(nn.FieldType(self.r2_act, [self.rho]*self.l3_c),
+        #                               nn.FieldType(self.r2_act, [self.rho]*self.l4_c),
+        #                               kernel_size=kernel_size,padding=0,bias=False,initialize=initialize)),
+        #     ('enc-f_elu-0', nn.FourierELU(self.r2_act, self.l4_c, irreps=self.irreps, N=num_of_samples, inplace=True)),
+        # ]))
+
+        # # 10x10x8IR -> 10x10x8R -> 4x4x1Q
+        # self.r2_act_out = gspaces.rot2dOnR2(N=N_out)
+        # self.repr = self.r2_act_out.regular_repr
+        # self.final_1 = torch.nn.Sequential(OrderedDict([
+        #     ('discrete_map', IFTPointwist(self.r2_act,self.r2_act_out,self.l4_c,irreps=self.irreps,N=self.r2_act_out.regular_repr.size)),
+        #     ('enc-final-1', nn.R2Conv(nn.FieldType(self.r2_act_out, [self.r2_act_out.regular_repr]*self.l4_c),
+        #                               nn.FieldType(self.r2_act_out, [self.r2_act_out.quotient_repr(2)]*n_output_channel),
+        #                               kernel_size=kernel_size,padding=0,bias=False,initialize=initialize))
+        # ]))
+
         # 16x16x18IR -> 10x10x8IR
         self.final_0 = torch.nn.Sequential(OrderedDict([
             ('enc-final-0', nn.R2Conv(nn.FieldType(self.r2_act, [self.rho]*self.l3_c),
                                       nn.FieldType(self.r2_act, [self.rho]*self.l4_c),
                                       kernel_size=kernel_size,padding=0,bias=False,initialize=initialize)),
             ('enc-f_elu-0', nn.FourierELU(self.r2_act, self.l4_c, irreps=self.irreps, N=num_of_samples, inplace=True)),
+            ('enc-final-0-1', nn.R2Conv(nn.FieldType(self.r2_act, [self.rho]*self.l4_c),
+                                      nn.FieldType(self.r2_act, [self.rho]*self.l5_c),
+                                      kernel_size=kernel_size,padding=0,bias=False,initialize=initialize)),
+            ('enc-f_elu-0-1', nn.FourierELU(self.r2_act, self.l5_c, irreps=self.irreps, N=num_of_samples, inplace=True)),
         ]))
 
         # 10x10x8IR -> 10x10x8R -> 4x4x1Q
         self.r2_act_out = gspaces.rot2dOnR2(N=N_out)
         self.repr = self.r2_act_out.regular_repr
         self.final_1 = torch.nn.Sequential(OrderedDict([
-            ('discrete_map', IFTPointwist(self.r2_act,self.r2_act_out,self.l4_c,irreps=self.irreps,N=self.r2_act_out.regular_repr.size)),
-            ('enc-final-1', nn.R2Conv(nn.FieldType(self.r2_act_out, [self.r2_act_out.regular_repr]*self.l4_c),
+            ('discrete_map', IFTPointwist(self.r2_act,self.r2_act_out,self.l5_c,irreps=self.irreps,N=self.r2_act_out.regular_repr.size)),
+            ('enc-final-1', nn.R2Conv(nn.FieldType(self.r2_act_out, [self.r2_act_out.regular_repr]*self.l5_c),
                                       nn.FieldType(self.r2_act_out, [self.r2_act_out.quotient_repr(2)]*n_output_channel),
-                                      kernel_size=kernel_size,padding=0,bias=False,initialize=initialize))
+                                      kernel_size=3,padding=0,bias=False,initialize=initialize))
         ]))
 
         # feat_type_out = nn.FieldType(self.r2_act, [self.r2_act.quotient_repr(2)]*n_output_channel)
         self.pool = nn.PointwiseAvgPool(nn.FieldType(self.r2_act_out, [self.r2_act_out.quotient_repr(2)]*n_output_channel),
-                                        kernel_size=4,stride=1,padding=0)
+                                        kernel_size=2,stride=1,padding=0)
         
         # 4X4X8IR -> 4X4X8R
         # N_out = 36
@@ -187,6 +210,7 @@ class SO2ResNet(torch.nn.Module):
         feature_map = self.final_1(feature_map)
         #print(feature_map.shape)
         feature_map = self.pool(feature_map)
+        # print(feature_map.shape)
         # print('so2 pick angle network')
 
         return feature_map

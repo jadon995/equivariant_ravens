@@ -1,6 +1,6 @@
 # data
 task: assembling-kits-3dtoolkit
-n_rotations: 36                   # Number of rotation classifications
+n_rotations: 360                  # Number of rotation classifications
 train_dir: '.'
 data_dir: '.'
 data_postfix: 'so2'               # Ckpt saved in 'checkpoints_{so2-7}' folder
@@ -25,7 +25,7 @@ n_demos: 100                      # demo no for model training
 n_steps: 10000                    # total training iterations
 interval: 10000                    # checkpoint savings
 n_runs: 1                         # runs of training (different seeds)
-logging: False                     # logging the training info
+logging: True                     # logging the training info
 
 # testing
 root_dir: '.'
