@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from collections import OrderedDict
 from escnn_extension.fourier_gapool import FourierGroupAvgPool
 from escnn_extension.inverse_fourier_transform import IFTPointwist
+from escnn_extension.quotient_ift import QIFTPointwise
 
 class SO2ResBlock(torch.nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size, N=-1, 
@@ -92,6 +93,7 @@ class SO2ResNet(torch.nn.Module):
         irreps = [(f,) for f in range(max_irrep+1)]
         self.irreps = irreps
         self.rho = self.r2_act.fibergroup.spectral_regular_representation(*(self.irreps), name=None)
+        self.rho_q= self.r2_act.fibergroup.spectral_quotient_representation(2, *(self.irreps), name=None)
 
         self.l1_c = n_middle_channels[0]
         self.l2_c = n_middle_channels[1]
@@ -117,22 +119,6 @@ class SO2ResNet(torch.nn.Module):
             ('enc-e2res-3', SO2ResBlock(self.l2_c,self.l3_c,kernel_size=kernel_size,N=N,irreps=self.irreps,num_of_samples=num_of_samples,flip=flip,quotient=quotient,initialize=initialize)),
         ]))
 
-        # self.conv_down_8 = torch.nn.Sequential(OrderedDict([
-        #     ('enc-pool-4', nn.PointwiseAvgPoolAntialiased(nn.FieldType(self.r2_act,[self.rho]*self.l3_c),sigma=0.66, stride=2)),
-        #     ('enc-e2res-4', SO2ResBlock(self.l3_c,self.l4_c,kernel_size=kernel_size,N=N,irreps=self.irreps,flip=flip,quotient=quotient,initialize=initialize)),
-        # ]))
-
-        # self.conv_down_16 = torch.nn.Sequential(OrderedDict([
-        #     ('enc-e2conv-4', nn.R2Conv(nn.FieldType(self.r2_act, [self.rho]*self.l3_c),
-        #                                nn.FieldType(self.r2_act, [self.rho]*self.l4_c),
-        #                                kernel_size=kernel_size,padding=0,bias=False,initialize=initialize)),
-        #     ('enc-e2elu-4', nn.FourierELU(self.r2_act, self.l4_c, irreps=self.irreps, N=num_of_samples, inplace=True)),
-        #     ('enc-e2conv-5', nn.R2Conv(nn.FieldType(self.r2_act, [self.rho]*self.l4_c),
-        #                                nn.FieldType(self.r2_act, [self.rho]*self.l4_c),
-        #                                kernel_size=kernel_size,padding=0,bias=False,initialize=initialize)),
-        #     ('enc-e2conv-5', nn.FourierELU(self.r2_act, 8, irreps=self.irreps, N=num_of_samples, inplace=True)),
-        # ]))
-
         # # 16x16x18IR -> 10x10x8IR
         # self.final_0 = torch.nn.Sequential(OrderedDict([
         #     ('enc-final-0', nn.R2Conv(nn.FieldType(self.r2_act, [self.rho]*self.l3_c),
@@ -151,42 +137,48 @@ class SO2ResNet(torch.nn.Module):
         #                               kernel_size=kernel_size,padding=0,bias=False,initialize=initialize))
         # ]))
 
-        # 16x16x18IR -> 10x10x8IR
+        # 16x16x18IR -> 4x4x8IR
+        # self.final_0 = torch.nn.Sequential(OrderedDict([
+        #     ('enc-final-0', nn.R2Conv(nn.FieldType(self.r2_act, [self.rho]*self.l3_c),
+        #                               nn.FieldType(self.r2_act, [self.rho]*self.l4_c),
+        #                               kernel_size=kernel_size,padding=0,bias=False,initialize=initialize)),
+        #     ('enc-f_elu-0', nn.FourierELU(self.r2_act, self.l4_c, irreps=self.irreps, N=num_of_samples, inplace=True)),
+        #     ('enc-final-0-1', nn.R2Conv(nn.FieldType(self.r2_act, [self.rho]*self.l4_c),
+        #                               nn.FieldType(self.r2_act, [self.rho]*self.l5_c),
+        #                               kernel_size=kernel_size,padding=0,bias=False,initialize=initialize)),
+        #     ('enc-f_elu-0-1', nn.FourierELU(self.r2_act, self.l5_c, irreps=self.irreps, N=num_of_samples, inplace=True)),
+        # ]))
+
+        # # 4x4x8IR -> 4x4x8R -> 2x2x1Q
+        # self.r2_act_out = gspaces.rot2dOnR2(N=N_out)
+        # self.repr = self.r2_act_out.regular_repr
+        # self.final_1 = torch.nn.Sequential(OrderedDict([
+        #     ('discrete_map', IFTPointwist(self.r2_act,self.r2_act_out,self.l5_c,irreps=self.irreps,N=self.r2_act_out.regular_repr.size)),
+        #     ('enc-final-1', nn.R2Conv(nn.FieldType(self.r2_act_out, [self.r2_act_out.regular_repr]*self.l5_c),
+        #                               nn.FieldType(self.r2_act_out, [self.r2_act_out.quotient_repr(2)]*n_output_channel),
+        #                               kernel_size=3,padding=0,bias=False,initialize=initialize))
+        # ]))
+        # self.pool = nn.PointwiseAvgPool(nn.FieldType(self.r2_act_out, [self.r2_act_out.quotient_repr(2)]*n_output_channel),
+                                        # kernel_size=2,stride=1,padding=0)
+
+        # 16X16X16IR -> 4X4X1IQ
         self.final_0 = torch.nn.Sequential(OrderedDict([
             ('enc-final-0', nn.R2Conv(nn.FieldType(self.r2_act, [self.rho]*self.l3_c),
                                       nn.FieldType(self.r2_act, [self.rho]*self.l4_c),
                                       kernel_size=kernel_size,padding=0,bias=False,initialize=initialize)),
             ('enc-f_elu-0', nn.FourierELU(self.r2_act, self.l4_c, irreps=self.irreps, N=num_of_samples, inplace=True)),
             ('enc-final-0-1', nn.R2Conv(nn.FieldType(self.r2_act, [self.rho]*self.l4_c),
-                                      nn.FieldType(self.r2_act, [self.rho]*self.l5_c),
-                                      kernel_size=kernel_size,padding=0,bias=False,initialize=initialize)),
-            ('enc-f_elu-0-1', nn.FourierELU(self.r2_act, self.l5_c, irreps=self.irreps, N=num_of_samples, inplace=True)),
+                                        nn.FieldType(self.r2_act, [self.rho_q]*n_output_channel),
+                                        kernel_size=kernel_size,padding=0,bias=False,initialize=initialize)),         
         ]))
 
-        # 10x10x8IR -> 10x10x8R -> 4x4x1Q
         self.r2_act_out = gspaces.rot2dOnR2(N=N_out)
-        self.repr = self.r2_act_out.regular_repr
         self.final_1 = torch.nn.Sequential(OrderedDict([
-            ('discrete_map', IFTPointwist(self.r2_act,self.r2_act_out,self.l5_c,irreps=self.irreps,N=self.r2_act_out.regular_repr.size)),
-            ('enc-final-1', nn.R2Conv(nn.FieldType(self.r2_act_out, [self.r2_act_out.regular_repr]*self.l5_c),
-                                      nn.FieldType(self.r2_act_out, [self.r2_act_out.quotient_repr(2)]*n_output_channel),
-                                      kernel_size=3,padding=0,bias=False,initialize=initialize))
+                ('discrete_map', QIFTPointwise(self.r2_act,self.r2_act_out,2,n_output_channel,irreps=self.irreps,N=self.r2_act_out.regular_repr.size)),
         ]))
-
-        # feat_type_out = nn.FieldType(self.r2_act, [self.r2_act.quotient_repr(2)]*n_output_channel)
         self.pool = nn.PointwiseAvgPool(nn.FieldType(self.r2_act_out, [self.r2_act_out.quotient_repr(2)]*n_output_channel),
-                                        kernel_size=2,stride=1,padding=0)
+                                        kernel_size=4,stride=1,padding=0)
         
-        # 4X4X8IR -> 4X4X8R
-        # N_out = 36
-        # self.r2_act_out = gspaces.rot2dOnR2(N=N_out)
-        # repr = self.r2_act_out.regular_repr
-        # self.final_3 = torch.nn.Sequential(
-        #     IFTPointwist(self.r2_act,self.r2_act_out,8,irreps=self.irreps,N=repr.size),
-        #     nn.R2Conv(nn.FieldType(self.r2_act_out,[repr]*8),
-        #               nn.FieldType(self.r2_act_out,[repr]*8),
-        #               kernel_size=)
-        # )
         for name, module in self.named_modules():
             if isinstance(module, nn.R2Conv):
                 if init:
