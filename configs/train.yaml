@@ -18,6 +18,10 @@ so2:
   resunet:
     irrep: 3                      # irreps: [0, max_irreps]
     sample: 16                    # sample no. for ift conversion
+  pick_angle:
+    lite: True
+    label_type: 1                 # [gaussian, rectangle, pulse, triangle]
+    label_radius: 5
 
 # training & testing
 gpu_id: 0                         # -1 means cpu

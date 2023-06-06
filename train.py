@@ -115,8 +115,11 @@ def main():
             print('so(2) equvariant agent')
             irrep_kwargs = {'irrep': args.so2.resunet.irrep, 
                             'sample': args.so2.resunet.sample}
+            angle_params = {'lite': args.so2.pick_angle.lite,
+                            'label_type': args.so2.pick_angle.label_type,
+                            'label_radius': args.so2.pick_angle.label_radius}
             agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,n_rotations=args.n_rotations,
-                                  lite=args.lite,load=args.load,angle_lite=args.angle_lite,init=args.init,
+                                  lite=args.lite,load=args.load,angle_params=angle_params,init=args.init,
                                   postfix=args.data_postfix,**irrep_kwargs)
         while agent.total_steps<args.n_steps:
             for _ in range(args.interval):

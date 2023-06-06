@@ -13,11 +13,12 @@ from so2_equ_res import so2_res
 from pick_angle_model import EquRes as lite_pick_angle
 from pick_angle_model_2 import EquRes as pick_angle
 from so2_pick_angle_model import SO2ResNet as so2_pick_angle
+from label.smooth_label import get_normalizd_angle_smooth_label as get_smooth_label
 
 
 class Attention:
     def __init__(self,in_shape,n_rotations,preprocess,device,lite=True,
-                 angle_lite=False,init=False, **irrep_kwargs):
+                 angle_params={}, init=False, **irrep_kwargs):
         # TODO BY HAOJIE: add lite model
         self.device = device
         self.preprocess = preprocess
@@ -31,6 +32,8 @@ class Attention:
         in_shape = tuple(in_shape)
         self.gspace = gspaces.Rot2dOnR2(4)
         self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
+        self.label_type = angle_params['label_type']
+        self.label_radius = angle_params['label_radius']
         
         if lite:
           self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(16, 32, 64, 128),
@@ -38,7 +41,7 @@ class Attention:
         else:
           self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(32, 64, 128, 256),
                                init=init,**irrep_kwargs).to(self.device)
-        if angle_lite:
+        if angle_params['lite']:
           # self.angle_model = lite_pick_angle(init=init).to(self.device)
           self.angle_model = so2_pick_angle(init=init,N=n_rotations,**irrep_kwargs).to(self.device) 
           self.crop_size = 64
@@ -119,7 +122,10 @@ class Attention:
         theta_i = theta / (2 * np.pi / self.n_rotations)
         # theta_i is in range [0,17]
         theta_i = np.int32(np.round(theta_i)) % (self.n_rotations/2)
-        label_theta = torch.as_tensor(theta_i,dtype=torch.long,device=self.device).unsqueeze(dim=0)
+        # label_theta = torch.as_tensor(theta_i,dtype=torch.long,device=self.device).unsqueeze(dim=0)
+        label_theta = get_smooth_label(int(theta_i), 180, self.label_type, self.label_radius, omega=int(360/self.n_rotations))
+        label_theta = torch.as_tensor(label_theta,dtype=torch.float32,device=self.device).unsqueeze(dim=0)
+        # print('angle label', theta_i, label_theta)
         # location label
         label_size = (1,) + in_img.shape[:2]
         label = torch.zeros(label_size,dtype=torch.long,device=self.device)
@@ -131,6 +137,7 @@ class Attention:
         # Get loss
         loss1 = F.cross_entropy(input=output, target=label)
         loss2 = F.cross_entropy(input=angle_index,target=label_theta)
+        # print(angle_index.shape, label_theta.shape)
 
         # Backpropagation
         if backprop:
