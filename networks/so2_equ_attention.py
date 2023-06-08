@@ -13,7 +13,8 @@ from so2_equ_res import so2_res
 from pick_angle_model import EquRes as lite_pick_angle
 from pick_angle_model_2 import EquRes as pick_angle
 from so2_pick_angle_model import SO2ResNet as so2_pick_angle
-from label.smooth_label import get_normalizd_angle_smooth_label as get_smooth_label
+from label.smooth_label import get_angle_smooth_label as get_smooth_label
+from label.gaussian_label import gen_gaussian_label as get_gaussian_2d_label
 
 
 class Attention:
@@ -123,17 +124,22 @@ class Attention:
         # theta_i is in range [0,17]
         theta_i = np.int32(np.round(theta_i)) % (self.n_rotations/2)
         # label_theta = torch.as_tensor(theta_i,dtype=torch.long,device=self.device).unsqueeze(dim=0)
-        label_theta = get_smooth_label(int(theta_i), 180, self.label_type, self.label_radius, omega=int(360/self.n_rotations))
+        label_theta = get_smooth_label(int(theta_i), 180, self.label_type, self.label_radius,
+                                       omega=int(360/self.n_rotations), normalized=True)
         label_theta = torch.as_tensor(label_theta,dtype=torch.float32,device=self.device).unsqueeze(dim=0)
         # print('angle label', theta_i, label_theta)
         # location label
-        label_size = (1,) + in_img.shape[:2]
-        label = torch.zeros(label_size,dtype=torch.long,device=self.device)
-        label[0, p[0], p[1],] = 1
-        label = label.reshape(-1)
-        label = torch.argmax(label).unsqueeze(dim=0)
-        #print('label size',label.shape)
-        #print('out size', output.shape)
+        # label_size = (1,) + in_img.shape[:2]  #(1, 320, 160)
+        # label = torch.zeros(label_size,dtype=torch.long,device=self.device)
+        # label[0, p[0], p[1],] = 1
+        # label = label.reshape(-1)
+        # label = torch.argmax(label).unsqueeze(dim=0)
+        # add 2d gaussian label
+        label = get_gaussian_2d_label(in_img.shape[:2], p, radius=1, sigma=1, 
+                                      normalized=True, device=self.device)
+        label = label.reshape(1,-1)
+        # print('label size',label.shape)
+        # print('out size', output.shape)
         # Get loss
         loss1 = F.cross_entropy(input=output, target=label)
         loss2 = F.cross_entropy(input=angle_index,target=label_theta)

@@ -20,8 +20,8 @@ so2:
     sample: 16                    # sample no. for ift conversion
   pick_angle:
     lite: True
-    label_type: 1                 # [gaussian, rectangle, pulse, triangle]
-    label_radius: 5
+    label_type: 0                 # [gaussian, rectangle, pulse, triangle]
+    label_radius: 1
 
 # training & testing
 gpu_id: 0                         # -1 means cpu

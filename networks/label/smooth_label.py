@@ -8,6 +8,7 @@ import math
 def gaussian_label(label, num_class, u=0, sig=4.0):
     x = np.array(range(math.floor(-num_class/2), math.ceil(num_class/2), 1))
     y_sig = np.exp(-(x - u) ** 2 / (2 * sig ** 2))
+    y_sig[np.abs(x)>sig] = 0 # clip the labels
     return np.concatenate([y_sig[math.ceil(num_class/2)-label:],
                            y_sig[:math.ceil(num_class/2)-label]], axis=0)
 
@@ -39,7 +40,8 @@ def triangle_label(label, num_class, raduius=4):
 
     return np.concatenate([y_sig[-label:], y_sig[:-label]], axis=0)
 
-def get_angle_smooth_label(angle_label, angle_range=180, label_type=0, radius=4, omega=1):
+def get_angle_smooth_label(angle_label, angle_range=180, label_type=0, 
+                           radius=4, omega=1, normalized=False):
     assert angle_range % omega == 0, 'wrong omega'
 
     angle_range /= omega
@@ -58,11 +60,10 @@ def get_angle_smooth_label(angle_label, angle_range=180, label_type=0, radius=4,
         smooth_label = triangle_label(angle_label, angle_range, raduius=radius)
     else:
         raise Exception('Only support gaussian, rectangular, triangle and pulse label')
+    
+    if normalized: smooth_label /= smooth_label.sum()
+    
     return smooth_label
-
-def get_normalizd_angle_smooth_label(angle_label, angle_range=180, label_type=0, radius=4, omega=1):
-    smooth_label = get_angle_smooth_label(angle_label, angle_range, label_type, radius, omega)
-    return smooth_label / smooth_label.sum()
 
 def get_all_smooth_label(num_label, label_type=0, raduius=4):
     all_smooth_label = []
@@ -117,7 +118,8 @@ if __name__ == '__main__':
     # y_sig = normalized_gaussian_label(45, 180, sig=2)
     # y_sig = pulse_label(30, 180)
     # y_sig = triangle_label(0, 90)
-    y_sig = get_normalizd_angle_smooth_label(135, 180, 0, 5, 1)
+    y_sig = get_angle_smooth_label(135, 180, 0, 1, 1, normalized=True)
+    # y_sig = get_angle_smooth_label(135, 180, 0, 4, 1)
     x = np.array(range(0, 180, 1))
     plt.plot(x, y_sig, "r-", linewidth=2)
     plt.grid(True)
