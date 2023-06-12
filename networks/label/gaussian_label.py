@@ -34,7 +34,7 @@ def gen_gaussian_label(map_size, center, radius=1, sigma=1,
     
     assert 0<=x<width
     assert 0<=y<height
-    assert radius==sigma # at this stage
+    # assert radius==sigma # at this stage
 
 
     heatmap = torch.zeros((width+2*radius), (height+2*radius),
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     # heatmap = gen_gaussian_target(heatmap, (0, 0), 1, k=1)
     # print(heatmap)
 
-    heatmap = gen_gaussian_label((8,8), (3,3), 2, 2, normalized=True, device='cuda')
+    heatmap = gen_gaussian_label((8,8), (3,3), 1, 1, normalized=True, device='cuda')
     print(heatmap.shape)
     print(heatmap)
 

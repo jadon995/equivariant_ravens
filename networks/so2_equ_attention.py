@@ -18,8 +18,8 @@ from label.gaussian_label import gen_gaussian_label as get_gaussian_2d_label
 
 
 class Attention:
-    def __init__(self,in_shape,n_rotations,preprocess,device,lite=True,
-                 angle_params={}, init=False, **irrep_kwargs):
+    def __init__(self,in_shape,n_rotations,preprocess,device,
+                 network_params={}, init=False):
         # TODO BY HAOJIE: add lite model
         self.device = device
         self.preprocess = preprocess
@@ -33,16 +33,23 @@ class Attention:
         in_shape = tuple(in_shape)
         self.gspace = gspaces.Rot2dOnR2(4)
         self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
-        self.label_type = angle_params['label_type']
-        self.label_radius = angle_params['label_radius']
         
-        if lite:
+        self.pos_label_type = network_params['position']['label_type']
+        self.pos_label_radius = network_params['position']['label_radius']
+        self.pos_label_sigma = network_params['position']['label_sigma']
+        self.angle_label_type = network_params['angle']['label_type']
+        self.angle_label_radius = network_params['angle']['label_radius']
+        self.angle_label_sigma = network_params['angle']['label_sigma']
+        irrep_kwargs = {'irrep': network_params['position']['irrep'],
+                        'sample': network_params['position']['sample']}
+        
+        if network_params['position']['lite']:
           self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(16, 32, 64, 128),
                                init=init,**irrep_kwargs).to(self.device)
         else:
           self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(32, 64, 128, 256),
                                init=init,**irrep_kwargs).to(self.device)
-        if angle_params['lite']:
+        if network_params['angle']['lite']:
           # self.angle_model = lite_pick_angle(init=init).to(self.device)
           self.angle_model = so2_pick_angle(init=init,N=n_rotations,**irrep_kwargs).to(self.device) 
           self.crop_size = 64
@@ -124,20 +131,28 @@ class Attention:
         # theta_i is in range [0,17]
         theta_i = np.int32(np.round(theta_i)) % (self.n_rotations/2)
         # label_theta = torch.as_tensor(theta_i,dtype=torch.long,device=self.device).unsqueeze(dim=0)
-        label_theta = get_smooth_label(int(theta_i), 180, self.label_type, self.label_radius,
-                                       omega=int(360/self.n_rotations), normalized=True)
+        label_theta = get_smooth_label(angle_label=int(theta_i), 
+                                       angle_range=180,
+                                       label_type=self.angle_label_type,
+                                       radius=self.angle_label_radius,
+                                       omega=int(360/self.n_rotations),
+                                       sig=self.angle_label_sigma,
+                                       normalized=True)
         label_theta = torch.as_tensor(label_theta,dtype=torch.float32,device=self.device).unsqueeze(dim=0)
         # print('angle label', theta_i, label_theta)
         # location label
-        # label_size = (1,) + in_img.shape[:2]  #(1, 320, 160)
-        # label = torch.zeros(label_size,dtype=torch.long,device=self.device)
-        # label[0, p[0], p[1],] = 1
-        # label = label.reshape(-1)
-        # label = torch.argmax(label).unsqueeze(dim=0)
-        # add 2d gaussian label
-        label = get_gaussian_2d_label(in_img.shape[:2], p, radius=1, sigma=1, 
-                                      normalized=True, device=self.device)
-        label = label.reshape(1,-1)
+        if self.pos_label_type == 2: # pulse/one-hot label
+          label_size = (1,) + in_img.shape[:2]  #(1, 320, 160)
+          label = torch.zeros(label_size,dtype=torch.long,device=self.device)
+          label[0, p[0], p[1],] = 1
+          label = label.reshape(-1)
+          label = torch.argmax(label).unsqueeze(dim=0)
+        elif self.pos_label_type == 0: # gaussian label
+          label = get_gaussian_2d_label(in_img.shape[:2], p,
+                                        radius=self.pos_label_radius, 
+                                        sigma=self.pos_label_sigma, 
+                                        normalized=True, device=self.device)
+          label = label.reshape(1,-1)
         # print('label size',label.shape)
         # print('out size', output.shape)
         # Get loss

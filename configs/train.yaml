@@ -15,13 +15,25 @@ init: True                        # Weight initialization
 load: 0                           # Pre-trained model iter; 0 means no loading
 
 so2:
-  resunet:
+  position:
     irrep: 3                      # irreps: [0, max_irreps]
     sample: 16                    # sample no. for ift conversion
-  pick_angle:
     lite: True
     label_type: 0                 # [gaussian, rectangle, pulse, triangle]
     label_radius: 1
+    label_sigma: 1
+  angle:
+    lite: True
+    label_type: 0                 # [gaussian, rectangle, pulse, triangle]
+    label_radius: 1
+    label_sigma: 1
+  transport:
+    irrep: 3                      # irreps: [0, max_irreps]
+    sample: 16                    # sample no. for ift conversion
+    lite: True
+    label_type: 0                 # [gaussian, rectangle, pulse, triangle]
+    label_radius: 1
+    label_sigma: 1
 
 # training & testing
 gpu_id: 0                         # -1 means cpu
