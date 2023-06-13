@@ -9,10 +9,26 @@ data_postfix: 'so2-360'               # Ckpt saved in 'checkpoints_{so2-7}' fold
 # model
 model: so2                        # model opt: [equ, femi, semi, #non, 
                                         # tail, grconv, equ_grconv, so2]
-lite: True                        # Lite version of attention and transport model
-angle_lite: True                  # Lite version of pick angle model 
 init: True                        # Weight initialization
 load: 0                           # Pre-trained model iter; 0 means no loading
+
+# equ model
+equ:
+  position:
+    lite: True
+    label_type: 2
+    label_radius: 1
+    label_sigma: 1
+  angle:
+    lite: True
+    label_type: 2
+    label_radius: 1
+    label_sigma: 1
+  transport:
+    lite: True
+    label_type: 2
+    label_radius: 1
+    label_sigma: 1
 
 so2:
   position:

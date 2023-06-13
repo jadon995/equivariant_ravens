@@ -2,17 +2,14 @@ import torch
 from label.gaussian_label import gen_gaussian_label
 from label.smooth_label import get_angle_smooth_label
 
-# def gen_gaussian_label(map_size, center, radius=1, sigma=1, 
-                    #    normalized=False, dtype=torch.float32, device='cpu'):
-
-# get_angle_smooth_label(angle_label, angle_range=180, label_type=0, 
-                        #    radius=4, omega=1, normalized=False):
-def get_gaussian_3d_label(map_size, center, radius, sigma=1, 
+def get_gaussian_3d_label(map_size, center, radius, sigma=1,
                           dtype=torch.float32, device='cpu'):
     heatmap_2d = gen_gaussian_label(map_size[1:], center[1:], radius=radius, sigma=sigma,
                                     normalized=True, dtype=dtype, device=device)
-    angle_label = get_angle_smooth_label(center[0], angle_range=map_size[0], radius=radius,
-                                         omega=1, sig=sigma, normalized=True)
+    angle_omega = int(360/map_size[0])
+    target_label = center[0] * angle_omega
+    angle_label = get_angle_smooth_label(target_label, angle_range=360, radius=radius,
+                                         omega=angle_omega, sig=sigma, normalized=True)
     angle_label = torch.as_tensor(angle_label,dtype=torch.float32,device=device)
     heatmap_2d = heatmap_2d.unsqueeze(dim=-1)
     heatmap_3d = heatmap_2d * angle_label

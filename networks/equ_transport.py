@@ -13,6 +13,7 @@ import kornia as K
 import torchvision
 from matplotlib import pyplot as plt
 from equ_res_3 import dian_res
+from label.smooth_label_3d import get_gaussian_3d_label
 
 class Transport:
     ''''equavariant Transport module'''
@@ -20,7 +21,8 @@ class Transport:
     # TODO by Haojie, try Resnet_ns + Resnet_ns
     #                 or Resnet    + Resenet_ns
 
-    def __init__(self, in_shape, n_rotations, crop_size, preprocess, device, lite=False, init=False):
+    def __init__(self, in_shape, n_rotations, crop_size, preprocess, device,
+                 network_params={}, init=False):
         # TODO BY HAOJIE: add lite model
         self.device = device
         self.preprocess = preprocess
@@ -28,6 +30,10 @@ class Transport:
         self.iters = 0
         self.crop_size_2 = crop_size  # crop size must be N*16 (e.g. 96)
         self.crop_size_1 = 96
+
+        self.label_type = network_params['transport']['label_type']
+        self.label_radius = network_params['transport']['label_radius']
+        self.label_sigma = network_params['transport']['label_sigma']
 
         # Padding the image to get same size output after the cross-relation
         self.pad_size_2 = int(self.crop_size_2 / 2)
@@ -52,7 +58,7 @@ class Transport:
         self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
         # self.model_map = Wide_ResNet(16, 4, 0.2, initial_stride=1, N=6, f=False, r=0, num_classes=3).to(self.device)
         # self.model_kernel = Wide_ResNet(16, 4, 0.2, initial_stride=1, N=6, f=False, r=0, num_classes=3).to(self.device)
-        if lite:
+        if network_params['transport']['lite']:
             self.model_map = dian_res(in_dim=6, out_dim=3, N=6, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
             self.model_kernel = dian_res(in_dim=6, out_dim=3, N=6, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
         else:
@@ -137,10 +143,16 @@ class Transport:
         itheta = np.int32(np.round(itheta)) % self.n_rotations
         # Get one-hot pixel label map.
         label_size = (self.n_rotations,) + in_img.shape[:2]
-        label = torch.zeros(label_size, dtype=torch.long, device=self.device)
-        label[itheta, q[0], q[1],] = 1
-        label = label.reshape(1, -1)
-        label = torch.argmax(label).unsqueeze(dim=0)
+        if self.label_type == 2: # pulse/one-hot label
+            label = torch.zeros(label_size, dtype=torch.long, device=self.device)
+            label[itheta, q[0], q[1],] = 1
+            label = label.reshape(1, -1)
+            label = torch.argmax(label).unsqueeze(dim=0)
+        elif self.label_type == 0:
+            label = get_gaussian_3d_label(label_size, (itheta, q[0], q[1]),
+                                          radius=self.label_radius, sigma=self.label_sigma,
+                                          device=self.device)
+            label = label.reshape(1,-1)
         # Get loss
         loss = F.cross_entropy(input=output, target=label)
 

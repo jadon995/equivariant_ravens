@@ -24,8 +24,8 @@ import tensorflow as tf
 class TransporterAgent:
     """Agent that uses Transporter Networks."""
 
-    def __init__(self, name, task, root_dir, device=0, n_rotations=36, lite=False,  load=False,
-                 angle_lite=False,init=False, postfix='equ'):
+    def __init__(self, name, task, root_dir, device=0, n_rotations=36, load=False,
+                 network_params={}, init=False, postfix='equ'):
         self.name = name
         self.task = task
         self.total_steps = 0
@@ -48,8 +48,7 @@ class TransporterAgent:
             n_rotations=self.n_rotations,
             preprocess=utils.preprocess,
             device=self.device,
-            lite=lite,
-            angle_lite=angle_lite,
+            network_params=network_params,
             init=init)
 
         self.transport = Transport(
@@ -58,7 +57,7 @@ class TransporterAgent:
             crop_size=self.crop_size,
             preprocess=utils.preprocess,
             device=self.device,
-            lite=lite,
+            network_params=network_params,
             init=init)
 
         if load != False:
