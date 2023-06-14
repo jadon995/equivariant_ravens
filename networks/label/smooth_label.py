@@ -22,6 +22,7 @@ def rectangular_label(label, num_class, raduius=4):
 
 
 def pulse_label(label, num_class):
+    label = label % num_class
     x = np.zeros([num_class])
     x[label] = 1
     return x
@@ -113,8 +114,8 @@ if __name__ == '__main__':
     # y_sig = y_sig / y_sig.sum()
     # y_sig = pulse_label(30, 180)
     # y_sig = triangle_label(0, 90)
-    y_sig = get_angle_smooth_label(135, 180, 0, 1, 1, 1, normalized=True)
-    x = np.array(range(0, 180, 1))
+    y_sig = get_angle_smooth_label(175, 180, 2, 1, 10, 1, normalized=True)
+    x = np.array(range(0, 18, 1))
     plt.plot(x, y_sig, "r-", linewidth=2)
     plt.grid(True)
     plt.show()
