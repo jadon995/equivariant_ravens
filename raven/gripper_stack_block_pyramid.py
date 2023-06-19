@@ -55,7 +55,7 @@ class StackBlockPyramid(Task):
       block_pose = self.get_random_pose(env, block_size)
       block_id = env.add_object(block_urdf, block_pose)
       p.changeVisualShape(block_id, -1, rgbaColor=colors[i] + [1])
-      objs.append((block_id, (np.pi / 2, None)))
+      objs.append((block_id, (np.pi / 2, None), None))
 
     # Associate placement locations for goals.
     place_pos = [(0, -0.05, 0.03), (0, 0, 0.03),

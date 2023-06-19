@@ -65,14 +65,14 @@ def main():
     for train_run in range(args.n_runs):
     #for train_run in range(1):
         #train_run = train_run+1
-        name = f'{args.task}-{args.n_demos}-{train_run}'
+        name = f'{args.task}-{args.n_rotations}-{args.n_demos}-{train_run}'
         
         writer = None
         #set tensorborad logger
         if args.logging:
-            curr_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-            log_dir = os.path.join(args.train_dir, 'logs', args.task,
-                                   curr_time, 'train')
+            curr_time = datetime.datetime.now().strftime('%Y%m%d')
+            log_dir = os.path.join(args.log_dir, 'logs', name,
+                                   curr_time+'-{}{}'.format(args.model, args.model_postfix))
             writer = tf.summary.create_file_writer(log_dir)
 
         # set seed
@@ -91,9 +91,9 @@ def main():
         if args.model == 'equ':
             print('equvairant agent')
             network_params = args.equ
-            agent = equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,
+            agent = equ_agent(name=name,task=args.task,root_dir=args.checkpoint_dir,device=args.gpu_id,
                               n_rotations=args.n_rotations,load=args.load,network_params=network_params,
-                              init=args.init,postfix=args.data_postfix)
+                              init=args.init,postfix=args.model_postfix)
         # if args.femi:
         #     print('femi_agent')
         #     agent = femi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite,init = args.init)
@@ -116,9 +116,9 @@ def main():
             print('so(2) equvariant agent')
             network_params = args.so2
             print(network_params)
-            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,
+            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.checkpoint_dir,device=args.gpu_id,
                                   n_rotations=args.n_rotations,load=args.load,network_params=network_params,
-                                  init=args.init,postfix=args.data_postfix)
+                                  init=args.init,postfix=args.model_postfix)
         while agent.total_steps<args.n_steps:
             for _ in range(args.interval):
                 agent.train(train_dataset,writer)

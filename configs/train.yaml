@@ -1,14 +1,16 @@
 # data
 task: assembling-kits-3dtoolkit
 n_rotations: 360                  # Number of rotation classifications
-train_dir: '.'
-data_dir: '.'
-data_postfix: 'so2-360'               # Ckpt saved in 'checkpoints_{so2-7}' folder
-                                  # Test saved in 'test_{so2-7}' folder
+log_dir: '.'                      # ./logs/{task}-{n_rotations}-{n_demos}-0/{date}_{model}{model_postfix}
+test_dir: './test/'               # ./test/{model}{model_postfix}/{task}-{n_rotations}-{n_demos}-0-{n_steps}
+data_dir: './dataset/'
+checkpoint_dir: './checkpoints/'  # ./checkpoints/{task}-{n_rotations}-{n_demos}-0/{model}{model_postfix}/...
 
 # model
-model: so2                        # model opt: [equ, femi, semi, #non, 
-                                        # tail, grconv, equ_grconv, so2]
+model: so2                        # model opt: [equ, femi, semi, #non, tail, grconv, equ_grconv, so2]
+model_postfix: ''                 # Ckpt saved in 'checkpoints_{so2-7}' folder
+                                  # Test saved in 'test_{so2-7}' folder
+
 init: True                        # Weight initialization
 load: 0                           # Pre-trained model iter; 0 means no loading
 
@@ -55,7 +57,7 @@ so2:
 gpu_id: 0                         # -1 means cpu
 n_demos: 100                      # demo no for model training
 n_steps: 10000                    # total training iterations
-interval: 10000                    # checkpoint savings
+interval: 5000                    # checkpoint savings
 n_runs: 1                         # runs of training (different seeds)
 logging: True                     # logging the training info
 

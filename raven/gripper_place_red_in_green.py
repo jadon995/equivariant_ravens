@@ -54,7 +54,7 @@ class PlaceRedInGreen(Task):
     for _ in range(n_blocks):
       block_pose = self.get_random_pose(env, block_size)
       block_id = env.add_object(block_urdf, block_pose)
-      blocks.append((block_id, (0, None)))
+      blocks.append((block_id, (0, None), None))
 
     # Goal: each red block is in a different green bowl.
     self.goals.append((blocks, np.ones((len(blocks), len(bowl_poses))),

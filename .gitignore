@@ -4,3 +4,4 @@ logs
 **/__pycache__/
 tool3d
 test_*
+dataset

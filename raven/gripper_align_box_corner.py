@@ -71,6 +71,6 @@ class AlignBoxCorner(Task):
     self.color_random_brown(box_id)
 
     # Goal: box is aligned with corner (1 of 4 possible poses).
-    self.goals.append(([(box_id, (2 * np.pi, None))], np.int32([[1, 1, 1, 1]]),
+    self.goals.append(([(box_id, (2 * np.pi, None), None)], np.int32([[1, 1, 1, 1]]),
                        [corner_pose, pose1, pose2, pose3],
                        False, True, 'pose', None, 1))

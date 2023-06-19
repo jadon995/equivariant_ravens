@@ -108,7 +108,7 @@ def main():
     ds = Dataset(os.path.join(args.data_dir, f'{args.task}-test'))
     for train_run in range(args.n_runs):
         #train_run +=1
-        name = f'{args.task}-{args.n_demos}-{train_run}'
+        name = f'{args.task}-{args.n_rotations}-{args.n_demos}-{train_run}'
         # set seed
         np.random.seed(train_run + 1)
         torch.set_num_threads(train_run + 1)
@@ -120,9 +120,9 @@ def main():
         if args.model == 'equ':
             print('equi agent')
             network_params = args.equ
-            agent = equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,
+            agent = equ_agent(name=name,task=args.task,root_dir=args.checkpoint_dir,device=args.gpu_id,
                               n_rotations=args.n_rotations,network_params=network_params,
-                              postfix=args.data_postfix)
+                              postfix=args.model_postfix)
         # if args.femi:
         #     print('femi_agent')
         #     agent = femi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
@@ -144,8 +144,8 @@ def main():
         if args.model == 'so2':
             print('so(2) equivariant agent')
             network_params = args.so2
-            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.data_dir,device=args.gpu_id,
-                                  n_rotations=args.n_rotations,network_params=network_params,postfix=args.data_postfix)
+            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.checkpoint_dir,device=args.gpu_id,
+                                  n_rotations=args.n_rotations,network_params=network_params,postfix=args.model_postfix)
     
         if args.entire ==True:
             n_steps = [20000,15000,5000,2000]
@@ -179,10 +179,10 @@ def main():
                 results.append((total_reward, info))
     
                 # Save results.
-                test_dir = 'test_{}'.format(args.data_postfix)
-                if not os.path.exists(os.path.join(args.root_dir, test_dir)):
-                    os.makedirs(os.path.join(args.root_dir, test_dir))
-                with open(os.path.join(args.root_dir, test_dir, f'{name}-{test_step}.pkl'),'wb') as f:
+                test_dir = '{}{}'.format(args.model, args.model_postfix)
+                if not os.path.exists(os.path.join(args.test_dir, test_dir)):
+                    os.makedirs(os.path.join(args.test_dir, test_dir))
+                with open(os.path.join(args.test_dir, test_dir, f'{name}-{test_step}.pkl'),'wb') as f:
                     pickle.dump(results, f)
                 
                 

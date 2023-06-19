@@ -25,7 +25,7 @@ class TransporterAgent:
     """Agent that uses Transporter Networks."""
 
     def __init__(self, name, task, root_dir, device=0, n_rotations=36, load=False,
-                 network_params={}, init=False, postfix='equ'):
+                 network_params={}, init=False, postfix=''):
         self.name = name
         self.task = task
         self.total_steps = 0
@@ -34,7 +34,8 @@ class TransporterAgent:
         self.pix_size = 0.003125
         self.in_shape = (320, 160, 6)
         self.cam_config = cameras.RealSenseD415.CONFIG
-        self.models_dir = os.path.join(root_dir, 'checkpoints_'+postfix, self.name)
+        # self.models_dir = os.path.join(root_dir, 'checkpoints_'+postfix, self.name)
+        self.models_dir = os.path.join(root_dir, self.name, 'equ'+postfix)
         self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
         if device == -1:
             device = torch.device('cpu')
@@ -193,7 +194,8 @@ class TransporterAgent:
 
         # change z value for block-insertion
         p0_xyz = list(p0_xyz)
-        if self.task == 'assembling-kits-3dtoolkit':
+        if self.task == 'assembling-kits-3dtoolkit' or \
+            self.task == 'assembling-single-toolkit':
             p0_xyz[2] = 0.03 + 0.03
         else:
             p0_xyz[2] = 0.03 + 0.04  # cube is 0.08X0.03 X 0.04

@@ -31,12 +31,13 @@ parser.add_argument('--disp', action='store_true', default=False)
 parser.add_argument('--task', type=str, default='block-insertion')
 parser.add_argument('--agent', type=str, default='equi_tn')
 parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
+parser.add_argument('--n_rotations', type=int,default=36)# the demo used for testing
 args = parser.parse_args()
 
 
 
 def main(args):
-  name = f'{args.task}-{args.n_demos}-'
+  name = f'{args.task}-{args.n_rotations}-{args.n_demos}-'
   print(name)
 
   # Load and print results to console.

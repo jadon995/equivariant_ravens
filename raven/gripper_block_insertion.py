@@ -38,7 +38,7 @@ class BlockInsertion(Task):
     targ_pose = self.add_fixture(env)
     # self.goals.append(
     #     ([block_id], [2 * np.pi], [[0]], [targ_pose], 'pose', None, 1.))
-    self.goals.append(([(block_id, (2 * np.pi, None))], np.int32([[1]]),
+    self.goals.append(([(block_id, (2 * np.pi, None), None)], np.int32([[1]]),
                        [targ_pose], False, True, 'pose', None, 1))
 
   def add_block(self, env):

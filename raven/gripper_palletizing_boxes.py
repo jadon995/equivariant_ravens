@@ -69,7 +69,7 @@ class PalletizingBoxes(Task):
           urdf = self.fill_template(box_template, {'DIM': box_size})
           box_id = env.add_object(urdf, pose)
           os.remove(urdf)
-          object_ids.append((box_id, (0, None)))
+          object_ids.append((box_id, (0, None), None))
           self.color_random_brown(box_id)
           object_points[box_id] = self.get_object_points(box_id)
 
@@ -106,7 +106,7 @@ class PalletizingBoxes(Task):
     """Palletizing: spawn another box in the workspace if it is empty."""
     workspace_empty = True
     if self.goals:
-      for obj, _ in self.goals[0][0]:
+      for obj, _, _ in self.goals[0][0]:
         obj_pose = p.getBasePositionAndOrientation(obj)
         workspace_empty = workspace_empty and ((obj_pose[0][1] < -0.5) or
                                                (obj_pose[0][1] > 0))
