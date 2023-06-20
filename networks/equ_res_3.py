@@ -166,18 +166,18 @@ class dian_res(torch.nn.Module):
         self.main_block = EquResUNet(n_input_channel=in_dim,n_output_channel=middle_dim[0],n_middle_channels=middle_dim,N=N)
         
         # Original version
-        # self.final = torch.nn.Sequential(
-            # nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0]),
-                    #   nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim), kernel_size=3,padding=1,initialize=False))
+        self.final = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0]),
+                      nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim), kernel_size=3,padding=1,initialize=False))
 
-        # Vesrion Group pooling 
-        self.gpool = nn.GroupPooling(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0])) 
-        self.fcn = torch.nn.Sequential(
-            torch.nn.Conv2d(self.gpool.out_type.size, middle_dim[0], kernel_size=1, stride=1, padding=0),
-            torch.nn.ReLU(inplace=True),
-            torch.nn.Conv2d(middle_dim[0], out_dim, kernel_size=1, stride=1, padding=0),
-        )
-        self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
+        # # Vesrion Group pooling 
+        # self.gpool = nn.GroupPooling(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0])) 
+        # self.fcn = torch.nn.Sequential(
+        #     torch.nn.Conv2d(self.gpool.out_type.size, middle_dim[0], kernel_size=1, stride=1, padding=0),
+        #     torch.nn.ReLU(inplace=True),
+        #     torch.nn.Conv2d(middle_dim[0], out_dim, kernel_size=1, stride=1, padding=0),
+        # )
+        # self.out_type = nn.FieldType(self.r2_act, [self.r2_act.trivial_repr]*out_dim)
 
         for name, module in self.named_modules():
             if isinstance(module, nn.R2Conv):
@@ -189,13 +189,13 @@ class dian_res(torch.nn.Module):
     
     def forward(self,x):
         # original version
-        # out = self.main_block(x)
-        # out = self.final(out)
+        out = self.main_block(x)
+        out = self.final(out)
 
         # Vesrion Group pooling 
-        out = self.main_block(x)
-        out = self.gpool(out)
-        out = out.tensor
-        out = self.fcn(out)
-        out = nn.GeometricTensor(out, self.out_type)
+        # out = self.main_block(x)
+        # out = self.gpool(out)
+        # out = out.tensor
+        # out = self.fcn(out)
+        # out = nn.GeometricTensor(out, self.out_type)
         return x,out

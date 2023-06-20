@@ -131,9 +131,8 @@ class Attention:
         # theta_i is in range [0,17]
         # theta_i = np.int32(np.round(theta_i)) % (self.n_rotations/2)
         # label_theta = torch.as_tensor(theta_i,dtype=torch.long,device=self.device).unsqueeze(dim=0)
-        theta_i = theta / (2 * np.pi) * 360.0
-        theta_i = np.int32(np.round(theta_i)) % 180
-        label_theta = get_smooth_label(angle_label=int(theta_i), 
+        theta_i = np.round(theta / (2 * np.pi) * 360.0)
+        label_theta = get_smooth_label(angle_label=theta_i, 
                                        angle_range=180,
                                        label_type=self.angle_label_type,
                                        radius=self.angle_label_radius,
