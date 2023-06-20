@@ -198,9 +198,6 @@ class so2_res(torch.nn.Module):
         self.r2_act = gspaces.rot2dOnR2(N=N)
         irreps = [(f,) for f in range(max_irrep+1)]
 
-        for key, value in irrep_kwargs.items():
-            print(key, value)
-
         self.main_block = SO2ResUnet(n_input_channel=in_dim,
                                      n_output_channel=middle_dim[0],
                                      n_middle_channels=middle_dim,

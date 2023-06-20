@@ -42,6 +42,8 @@ class Attention:
         self.angle_label_sigma = network_params['angle']['label_sigma']
         irrep_kwargs = {'irrep': network_params['position']['irrep'],
                         'sample': network_params['position']['sample']}
+        angle_irrep_kwargs = {'irrep': network_params['angle']['irrep'],
+                              'sample': network_params['angle']['sample']}
         
         if network_params['position']['lite']:
           self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(16, 32, 64, 128),
@@ -51,7 +53,7 @@ class Attention:
                                init=init,**irrep_kwargs).to(self.device)
         if network_params['angle']['lite']:
           # self.angle_model = lite_pick_angle(init=init).to(self.device)
-          self.angle_model = so2_pick_angle(init=init,N=n_rotations,**irrep_kwargs).to(self.device) 
+          self.angle_model = so2_pick_angle(init=init,N=n_rotations,**angle_irrep_kwargs).to(self.device) 
           self.crop_size = 64
         else:
           self.angle_model = pick_angle(init=init,N=self.n_rotations).to(self.device)

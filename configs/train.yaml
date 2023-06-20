@@ -41,6 +41,8 @@ so2:
     label_radius: 1
     label_sigma: 1
   angle:
+    irrep: 6                      # irreps: [0, max_irreps]
+    sample: 16                    # sample no. for ift conversion
     lite: True
     label_type: 0                 # [gaussian, rectangle, pulse, triangle]
     label_radius: 1
