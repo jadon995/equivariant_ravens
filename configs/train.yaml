@@ -17,6 +17,7 @@ load: 0                           # Pre-trained model iter; 0 means no loading
 # equ model
 equ:
   position:
+    N: 6
     lite: True
     label_type: 2
     label_radius: 1
@@ -27,6 +28,7 @@ equ:
     label_radius: 1
     label_sigma: 1
   transport:
+    N: 6
     lite: True
     label_type: 2
     label_radius: 1
@@ -42,7 +44,7 @@ so2:
     label_sigma: 1
   angle:
     irrep: 6                      # irreps: [0, max_irreps]
-    sample: 16                    # sample no. for ift conversion
+    sample: 36                    # sample no. for ift conversion
     lite: True
     label_type: 0                 # [gaussian, rectangle, pulse, triangle]
     label_radius: 1

@@ -54,16 +54,13 @@ class Transport:
         if not hasattr(self, 'kernel_dim'):
             self.kernel_dim = 3
 
-        self.gspace = gspaces.Rot2dOnR2(6)
-        self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
-        # self.model_map = Wide_ResNet(16, 4, 0.2, initial_stride=1, N=6, f=False, r=0, num_classes=3).to(self.device)
-        # self.model_kernel = Wide_ResNet(16, 4, 0.2, initial_stride=1, N=6, f=False, r=0, num_classes=3).to(self.device)
+        transport_Cn = network_params['transport']['N']
         if network_params['transport']['lite']:
-            self.model_map = dian_res(in_dim=6, out_dim=3, N=6, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
-            self.model_kernel = dian_res(in_dim=6, out_dim=3, N=6, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
+            self.model_map = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
+            self.model_kernel = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
         else:
-            self.model_map = dian_res(in_dim=6, out_dim=3, N=6, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
-            self.model_kernel = dian_res(in_dim=6, out_dim=3, N=6, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
+            self.model_map = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
+            self.model_kernel = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
 
 
         self.parameter = list(self.model_map.parameters()) + list(self.model_kernel.parameters())
