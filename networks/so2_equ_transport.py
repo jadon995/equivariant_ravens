@@ -12,7 +12,8 @@ import e2cnn.nn as enn
 import kornia as K
 import torchvision
 from matplotlib import pyplot as plt
-from equ_res_3 import dian_res
+# from equ_res_3 import dian_res
+from so2_equ_res import so2_res
 from label.smooth_label_3d import get_gaussian_3d_label
 from label.label_smoothing import smooth_label
 
@@ -22,7 +23,7 @@ class Transport:
     # TODO by Haojie, try Resnet_ns + Resnet_ns
     #                 or Resnet    + Resenet_ns
 
-    def __init__(self, in_shape, n_rotations, crop_size, preprocess, device,
+    def __init__(self, in_shape, n_rotations, crop_size, preprocess, device, 
                  network_params={}, init=False):
         # TODO BY HAOJIE: add lite model
         self.device = device
@@ -36,6 +37,8 @@ class Transport:
         self.label_smooth = network_params['transport']['label_smooth']
         self.label_radius = network_params['transport']['label_radius']
         self.label_sigma = network_params['transport']['label_sigma']
+        irrep_kwargs = {'irrep': network_params['transport']['irrep'],
+                        'sample': network_params['transport']['sample']}
 
         # Padding the image to get same size output after the cross-relation
         self.pad_size_2 = int(self.crop_size_2 / 2)
@@ -56,13 +59,20 @@ class Transport:
         if not hasattr(self, 'kernel_dim'):
             self.kernel_dim = 3
 
-        transport_Cn = network_params['transport']['N']
+        self.gspace = gspaces.Rot2dOnR2(6)
+        self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
+        # self.model_map = Wide_ResNet(16, 4, 0.2, initial_stride=1, N=6, f=False, r=0, num_classes=3).to(self.device)
+        # self.model_kernel = Wide_ResNet(16, 4, 0.2, initial_stride=1, N=6, f=False, r=0, num_classes=3).to(self.device)
         if network_params['transport']['lite']:
-            self.model_map = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
-            self.model_kernel = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
+            self.model_map = so2_res(in_dim=6, out_dim=3, middle_dim=(16, 32, 64, 128),
+                                     init=init, **irrep_kwargs).to(self.device)
+            self.model_kernel = so2_res(in_dim=6, out_dim=3, middle_dim=(16, 32, 64, 128),
+                                        init=init, **irrep_kwargs).to(self.device)
         else:
-            self.model_map = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
-            self.model_kernel = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
+            self.model_map = so2_res(in_dim=6, out_dim=3, middle_dim=(32, 64, 128, 256),
+                                     init=init, **irrep_kwargs).to(self.device)
+            self.model_kernel = so2_res(in_dim=6, out_dim=3, middle_dim=(32, 64, 128, 256),
+                                        init=init, **irrep_kwargs).to(self.device)
 
 
         self.parameter = list(self.model_map.parameters()) + list(self.model_kernel.parameters())
@@ -155,6 +165,8 @@ class Transport:
                                           radius=self.label_radius, sigma=self.label_sigma,
                                           device=self.device)
             label = label.reshape(1,-1)
+        # print(output.shape)
+        # print(label.shape)
         # Get loss
         loss = F.cross_entropy(input=output, target=label)
 

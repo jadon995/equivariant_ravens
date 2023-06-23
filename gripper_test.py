@@ -1,5 +1,7 @@
 import datetime
 import os
+import yaml
+from easydict import EasyDict as edict
 import numpy as np
 #from equ_transporter import TransporterAgent as equ_agent
 from raven.dataset import Dataset
@@ -17,39 +19,55 @@ from raven.gripper_stack_block_pyramid import StackBlockPyramid
 from raven.gripper_palletizing_boxes import PalletizingBoxes
 from raven.gripper_packing_boxes import PackingBoxes
 from raven.gripper_assembling_kits import AssemblingKits, AssemblingKitsTool, AssemblingKits3DTool, AssemblingKitsScrewDriver, AssemblingKits3DToolKit
+from raven.gripper_assembling_toolkit import AssemblingToolKit
 
 from networks.equivariant_transporter import TransporterAgent as equ_agent
 from networks.non_equi_transporter import TransporterAgent as non_equi_agent
 from networks.femi_transporter import TransporterAgent as femi_agent
 from networks.semi_transporter import TransporterAgent as semi_agent
 from networks.equivariant_transporter_tail import TransporterAgent as equ_agent_tail
+from networks.gr_non_equi_transporter import TransporterAgent as gr_agent
+from networks.gr_equi_transporter import TransporterAgent as gr_equ_agent
+from networks.so2_equivariant_transporter import TransporterAgent as so2_equ_agent
 
 import faulthandler; faulthandler.enable()
 
-parser = argparse.ArgumentParser(description='ravens_test')
-parser.add_argument('--root_dir', type=str, default='.')
-parser.add_argument('--data_dir', type=str, default='.')
-parser.add_argument('--assets_root', type=str, default='./raven/assets')
-parser.add_argument('--task', type=str, default='block-insertion')
-parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
-parser.add_argument('--n_steps', type=int,default=1000)# the train steps per epoch
-parser.add_argument('--n_runs', type=int,default=1)
-#parser.add_argument('--interval', type=int,default=1000)
-parser.add_argument('--gpu', type=int, default=1)
-parser.add_argument('--disp', action='store_true', default=False)
-parser.add_argument('--shared_memory', action='store_true', default=False)
-parser.add_argument('--equ', action='store_true', default=False)
-parser.add_argument('--lite', action='store_true', default=False)
-parser.add_argument('--angle_lite', action='store_true', default=False)
-parser.add_argument('--continuous', action='store_true', default=False)
-parser.add_argument('--entire', action='store_true', default=False)
-parser.add_argument('--femi', action='store_true', default=False)
-parser.add_argument('--semi', action='store_true', default=False)
-parser.add_argument('--non', action='store_true', default=False)
-parser.add_argument('--tail', action='store_true', default=False)
-args = parser.parse_args()
+# parser = argparse.ArgumentParser(description='ravens_test')
+# parser.add_argument('--root_dir', type=str, default='.')
+# parser.add_argument('--data_dir', type=str, default='.')
+# parser.add_argument('--assets_root', type=str, default='./raven/assets')
+# parser.add_argument('--task', type=str, default='block-insertion')
+# parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
+# parser.add_argument('--n_steps', type=int,default=1000)# the train steps per epoch
+# parser.add_argument('--n_runs', type=int,default=1)
+# #parser.add_argument('--interval', type=int,default=1000)
+# parser.add_argument('--gpu', type=int, default=1)
+# parser.add_argument('--disp', action='store_true', default=False)
+# parser.add_argument('--shared_memory', action='store_true', default=False)
+# parser.add_argument('--equ', action='store_true', default=False)
+# parser.add_argument('--lite', action='store_true', default=False)
+# parser.add_argument('--angle_lite', action='store_true', default=False)
+# parser.add_argument('--continuous', action='store_true', default=False)
+# parser.add_argument('--entire', action='store_true', default=False)
+# parser.add_argument('--femi', action='store_true', default=False)
+# parser.add_argument('--semi', action='store_true', default=False)
+# parser.add_argument('--non', action='store_true', default=False)
+# parser.add_argument('--tail', action='store_true', default=False)
+# parser.add_argument('--grconv', action='store_true', default=False)
+# parser.add_argument('--equ_grconv', action='store_true', default=False)
+# parser.add_argument('--equ_so2', action='store_true', default=False)
+# args = parser.parse_args()
 
-def main(args):
+def main():
+    # load arguments
+    parser = argparse.ArgumentParser(description='ravens')
+    parser.add_argument('--config_file', type=str, required=True, help='the name of configuration file')
+    arguments = parser.parse_args()
+    config_name = arguments.config_file
+
+    with open(os.path.join('configs', config_name), 'r') as file:
+        config_data = yaml.load(file, Loader=yaml.FullLoader)
+    args = edict(config_data)
 
     # Initialize environment and task.
     env = Environment(
@@ -80,6 +98,8 @@ def main(args):
         task = AssemblingKits3DTool(continuous=args.continuous)
     elif args.task == 'assembling-kits-3dtoolkit':
         task = AssemblingKits3DToolKit(continuous=args.continuous)
+    elif args.task == 'assembling-single-toolkit':
+        task = AssemblingToolKit(continuous=args.continuous)    
     else:
         raise RuntimeError('gripper version no {}'.format(args.task))
     task.mode = 'test'
@@ -88,7 +108,7 @@ def main(args):
     ds = Dataset(os.path.join(args.data_dir, f'{args.task}-test'))
     for train_run in range(args.n_runs):
         #train_run +=1
-        name = f'{args.task}-{args.n_demos}-{train_run}'
+        name = f'{args.task}-{args.n_rotations}-{args.n_demos}-{train_run}'
         # set seed
         np.random.seed(train_run + 1)
         torch.set_num_threads(train_run + 1)
@@ -97,22 +117,36 @@ def main(args):
         cudnn.deterministic = True
         # Initial Agent
         #agent = task.oracle(env, steps_per_seg=3)
-        if args.equ:
+        if args.model == 'equ':
             print('equi agent')
-            agent = equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        if args.femi:
-            print('femi_agent')
-            agent = femi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        if args.semi:
-            print('semi_agent')
-            agent = semi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite)
-        if args.non:
-            print('no equivariant agent')
-            agent = non_equi_agent(name=name,task=args.task,root_dir=args.data_dir)
-        if args.tail:
-            print('equvairant agent with tail network')
-            agent = equ_agent_tail(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        
+            network_params = args.equ
+            agent = equ_agent(name=name,task=args.task,root_dir=args.checkpoint_dir,device=args.gpu_id,
+                              n_rotations=args.n_rotations,network_params=network_params,
+                              postfix=args.model_postfix)
+        # if args.femi:
+        #     print('femi_agent')
+        #     agent = femi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+        # if args.semi:
+        #     print('semi_agent')
+        #     agent = semi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite)
+        # if args.non:
+        #     print('no equivariant agent')
+        #     agent = non_equi_agent(name=name,task=args.task,root_dir=args.data_dir)
+        # if args.tail:
+        #     print('equvairant agent with tail network')
+        #     agent = equ_agent_tail(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+        # if args.grconv:
+        #     print('no equivariant grconv agent')
+        #     agent = gr_agent(name=name,task=args.task,root_dir=args.data_dir)
+        # if args.equ_grconv:
+        #     print('equivariant grconv agent')
+        #     agent = gr_equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+        if args.model == 'so2':
+            print('so(2) equivariant agent')
+            network_params = args.so2
+            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.checkpoint_dir,device=args.gpu_id,
+                                  n_rotations=args.n_rotations,network_params=network_params,postfix=args.model_postfix)
+    
         if args.entire ==True:
             n_steps = [20000,15000,5000,2000]
         else:
@@ -133,10 +167,11 @@ def main(args):
                 obs = env.reset()
                 info = None
                 reward = 0
-                for _ in range(task.max_steps):
+                for k in range(task.max_steps):
+                    extend_secs = 0 if k<task.max_steps-1 else 2
                     act = agent.act(obs, info, goal)
                     #act = agent.act(obs, info)
-                    obs, reward, done, info = env.step(act)
+                    obs, reward, done, info = env.step(act, extend_secs=extend_secs)
                     total_reward += reward
                     print(f'Total Reward: {total_reward} Done: {done}')
                     if done:
@@ -144,35 +179,13 @@ def main(args):
                 results.append((total_reward, info))
     
                 # Save results.
-                if args.equ:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_equi')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_equi'))
-                  
-                  with open(os.path.join(args.root_dir, 'test_equi', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                if args.non:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_non_equi')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_non_equi'))
-                  with open(os.path.join(args.root_dir, 'test_non_equi', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                      
-                if args.femi:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_femi')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_femi'))
-                  with open(os.path.join(args.root_dir, 'test_femi', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                      
-                if args.semi:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_semi')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_semi'))
-                  with open(os.path.join(args.root_dir, 'test_semi', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
-                if args.tail:
-                  if not os.path.exists(os.path.join(args.root_dir, 'test_tail')):
-                    os.makedirs(os.path.join(args.root_dir, 'test_tail'))
-                  with open(os.path.join(args.root_dir, 'test_tail', f'{name}-{test_step}.pkl'),'wb') as f:
-                      pickle.dump(results, f)
+                test_dir = '{}{}'.format(args.model, args.model_postfix)
+                if not os.path.exists(os.path.join(args.test_dir, test_dir)):
+                    os.makedirs(os.path.join(args.test_dir, test_dir))
+                with open(os.path.join(args.test_dir, test_dir, f'{name}-{test_step}.pkl'),'wb') as f:
+                    pickle.dump(results, f)
+                
                 
 
 if __name__=="__main__":
-    main(args)
+    main()

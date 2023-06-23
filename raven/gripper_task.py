@@ -132,7 +132,7 @@ class Task():
         matches = matches.copy()
         # Ignore already matched objects.
         for i in range(len(objs)):
-          object_id, (symmetry, _) = objs[i]
+          object_id, (symmetry, _), _ = objs[i]
           pose = p.getBasePositionAndOrientation(object_id)
           targets_i = np.argwhere(matches[i, :]).reshape(-1)
           for j in targets_i:
@@ -144,7 +144,7 @@ class Task():
       nn_dists = []
       nn_targets = []
       for i in range(len(objs)):
-        object_id, (symmetry, _) = objs[i]
+        object_id, (symmetry, _), _ = objs[i]
         xyz, _ = p.getBasePositionAndOrientation(object_id)
         targets_i = np.argwhere(matches[i, :]).reshape(-1)
         #print('argwhere',np.argwhere(np.array([0,1,0,1,1])))
@@ -306,6 +306,7 @@ class Task():
           _x=0.
           _y=0.
           _z = 0.04
+          _x, _y, _z = objs[pick_i][2] # keypoint
           _xyz = np.asarray([_x,_y,_z])
           _trans = Transform(Rotation.from_quat(np.asarray(_pose[1])),np.asarray(_pose[0]))
           _xyz = _trans.transform_point(_xyz)
@@ -339,6 +340,12 @@ class Task():
       pick_pos = utils.pix_to_xyz(pick_pix, hmap, self.bounds, self.pix_size)
       #print('pick position: ',pick_pos)
       #TODO by haojie z value and theta for grasp
+
+      # remain in the continuous space
+      # print("pick_pos descrete", pick_pos)
+      # pick_pos = (_xyz[0], _xyz[1], pick_pos[2])
+      # print(pick_pos)
+      # print("pick_pos continuos", pick_pos)
 
       #print('=============',self.task_name)
       #print(self.task_name == 'palletizing-boxes')
@@ -398,8 +405,26 @@ class Task():
           _z_rot = Rotation.from_euler('z', 0.)
         _z_rot = Rotation.from_euler('z', np.pi/2)
 
-        pick_pose_ = (np.asarray(pick_pos), (_z_rot*Rotation.from_quat(np.asarray(_pose[1]))).as_quat())
+        # not constrained to the top down grasping
+        # pick_pose_ = (np.asarray(pick_pos), (_z_rot*Rotation.from_quat(np.asarray(_pose[1]))).as_quat())
 
+        """ constrained to top-down planar grasping
+        pick_pose_mx_ = (Rotation.from_quat(np.asarray(_pose[1]))).as_matrix()
+        obj_y_axis_ = pick_pose_mx_[:, 1]
+        obj_y_axis_[-1] = 0.
+        obj_y_axis_ = obj_y_axis_/ np.linalg.norm(obj_y_axis_)
+        obj_z_axis_ = np.array([0., 0., 1.0])
+        obj_x_axis_ = np.cross(obj_y_axis_, obj_z_axis_)
+        pick_pose_mx_ = np.stack((obj_x_axis_, obj_y_axis_, obj_z_axis_), axis=-1)
+        pick_pose_ = (np.asarray(pick_pos), (_z_rot*Rotation.from_matrix(np.asarray(pick_pose_mx_))).as_quat())
+        # print(pick_pose_)
+        # print((Rotation.from_quat(pick_pose_[1])).as_matrix())
+        """
+        obj_euler = utils.quatXYZW_to_eulerXYZ(_pose[1])
+        obj_quat = utils.eulerXYZ_to_quatXYZW((0, 0, obj_euler[2])) # only have theta value along z-axis
+        pick_pose_ = (np.asarray(pick_pos) , (_z_rot*Rotation.from_quat(np.asarray(obj_quat))).as_quat())
+        # print(pick_pose_)
+        # print((Rotation.from_quat(pick_pose_[1])).as_matrix())
 
       if self.task_name == 'palletizing-boxes':
         #print(5)
@@ -464,7 +489,10 @@ class Task():
 
 
       # Todo discretized function for gripper
-      pick_pose_,place_pose = self.discretized(pick_pose_,place_pose)
+      # pick_pose_,place_pose = self.discretized(pick_pose_,place_pose)
+      # print("pick_pose: ",pick_pose_)
+      # print("place_pose:",place_pose)
+      # print(targ_pose)
 
       return {'pose0': pick_pose_, 'pose1': place_pose}
 
@@ -522,7 +550,7 @@ class Task():
       if metric == 'pose':
         step_reward = 0
         for i in range(len(objs)):
-          object_id, (symmetry, _) = objs[i]
+          object_id, (symmetry, _), _ = objs[i]
           pose = p.getBasePositionAndOrientation(object_id)
           targets_i = np.argwhere(matches[i, :]).reshape(-1)
           for j in targets_i:
@@ -535,7 +563,7 @@ class Task():
       elif metric == "adi":
         step_reward = 0
         for i in range(len(objs)):
-          object_id, (symmetry, mesh) = objs[i]
+          object_id, (symmetry, mesh), _ = objs[i]
           pose = p.getBasePositionAndOrientation(object_id)
           targets_i = np.argwhere(matches[i, :]).reshape(-1)
           for j in targets_i:

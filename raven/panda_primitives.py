@@ -25,6 +25,9 @@ class PickPlace():
         Returns:
           timeout: robot movement timed out if True.
         """
+        if task_name == 'assembling-kits':
+            self.height = 0.15 # speed up simulation
+
         pick_pose, place_pose = pose0, pose1
         pick_pose_ = Transform(Rotation.from_quat(pick_pose[1]), pick_pose[0])
         place_pose_ = Transform(Rotation.from_quat(place_pose[1]), place_pose[0])
@@ -53,7 +56,7 @@ class PickPlace():
             eef_step = 0.008
             vel = 0.60
         if task_name == 'assembling-kits':
-            offset = Transform(Rotation.identity(), [0, 0, -0.02])
+            offset = Transform(Rotation.identity(), [0, 0, -0.005])
             pick_pose_ = offset*Transform(Rotation.from_quat(pick_pose[1]), pick_pose[0])
             vel = 0.06
 
@@ -136,6 +139,6 @@ class PickPlace():
         # a small increase for the gripper width
         ee.move(ee.read()+0.005)
         time.sleep(0.1)
-        ee.move_tcp_xyz(postplace_pose,eef_step=eef_step,vel=vel)
+        # ee.move_tcp_xyz(postplace_pose,eef_step=eef_step,vel=vel)
         self.remove(ee)
         return False

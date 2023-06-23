@@ -8,16 +8,19 @@ import e2cnn
 from e2cnn import gspaces
 import torch.nn.functional as F
 import e2cnn.nn as enn
-from equ_res_3 import dian_res
+# from equ_res_3 import dian_res
+from so2_equ_res import so2_res
 from pick_angle_model import EquRes as lite_pick_angle
 from pick_angle_model_2 import EquRes as pick_angle
+from so2_pick_angle_model import SO2ResNet as so2_pick_angle
 from label.smooth_label import get_angle_smooth_label as get_smooth_label
 from label.gaussian_label import gen_gaussian_label as get_gaussian_2d_label
 from label.label_smoothing import smooth_label
 
+
 class Attention:
     def __init__(self,in_shape,n_rotations,preprocess,device,
-                 network_params={},init=False):
+                 network_params={}, init=False):
         # TODO BY HAOJIE: add lite model
         self.device = device
         self.preprocess = preprocess
@@ -31,7 +34,7 @@ class Attention:
         in_shape = tuple(in_shape)
         self.gspace = gspaces.Rot2dOnR2(4)
         self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
-
+        
         self.pos_label_type = network_params['position']['label_type']
         self.pos_label_radius = network_params['position']['label_radius']
         self.pos_label_sigma = network_params['position']['label_sigma']
@@ -40,15 +43,20 @@ class Attention:
         self.angle_label_radius = network_params['angle']['label_radius']
         self.angle_label_sigma = network_params['angle']['label_sigma']
         self.angle_label_smooth = network_params['angle']['label_smooth']
-
-        pos_Cn = network_params['position']['N']
+        irrep_kwargs = {'irrep': network_params['position']['irrep'],
+                        'sample': network_params['position']['sample']}
+        angle_irrep_kwargs = {'irrep': network_params['angle']['irrep'],
+                              'sample': network_params['angle']['sample']}
         
         if network_params['position']['lite']:
-          self.model = dian_res(in_dim=6,out_dim=1,N=pos_Cn,middle_dim=(16, 32, 64, 128),init=init).to(self.device)
+          self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(16, 32, 64, 128),
+                               init=init,**irrep_kwargs).to(self.device)
         else:
-          self.model = dian_res(in_dim=6,out_dim=1,N=pos_Cn,middle_dim=(32, 64, 128, 256),init=init).to(self.device)
+          self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(32, 64, 128, 256),
+                               init=init,**irrep_kwargs).to(self.device)
         if network_params['angle']['lite']:
-          self.angle_model = lite_pick_angle(init=init,N=self.n_rotations).to(self.device)
+          # self.angle_model = lite_pick_angle(init=init).to(self.device)
+          self.angle_model = so2_pick_angle(init=init,N=n_rotations,**angle_irrep_kwargs).to(self.device) 
           self.crop_size = 64
         else:
           self.angle_model = pick_angle(init=init,N=self.n_rotations).to(self.device)
@@ -123,9 +131,9 @@ class Attention:
         if theta >= np.pi:
           theta = theta -np.pi
         # angle label
-        # dgree interval: 10
-        # theta_i is in range [0,17]
+        # dgree interval: 10 
         # theta_i = theta / (2 * np.pi / self.n_rotations)
+        # theta_i is in range [0,17]
         # theta_i = np.int32(np.round(theta_i)) % (self.n_rotations/2)
         # label_theta = torch.as_tensor(theta_i,dtype=torch.long,device=self.device).unsqueeze(dim=0)
         if self.angle_label_type == 2:
@@ -162,11 +170,12 @@ class Attention:
                                         sigma=self.pos_label_sigma, 
                                         normalized=True, device=self.device)
           label = label.reshape(1,-1)
-        #print('label size',label.shape)
-        #print('out size', output.shape)
+        # print('label size',label.shape)
+        # print('out size', output.shape)
         # Get loss
         loss1 = F.cross_entropy(input=output, target=label)
         loss2 = F.cross_entropy(input=angle_index,target=label_theta)
+        # print(angle_index.shape, label_theta.shape)
 
         # Backpropagation
         if backprop:

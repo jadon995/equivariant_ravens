@@ -10,6 +10,7 @@ from raven.gripper_stack_block_pyramid import StackBlockPyramid
 from raven.gripper_palletizing_boxes import PalletizingBoxes
 from raven.gripper_packing_boxes import PackingBoxes
 from raven.gripper_assembling_kits import AssemblingKits, AssemblingKitsTool, AssemblingKitsScrewDriver, AssemblingKits3DTool, AssemblingKits3DToolKit
+from raven.gripper_assembling_toolkit import AssemblingToolKit
 
 parser = argparse.ArgumentParser(description='ravens_demos')
 
@@ -57,6 +58,8 @@ def main():
         task = AssemblingKits3DTool(continuous=args.continuous)
     elif args.task == 'assembling-kits-3dtoolkit':
         task = AssemblingKits3DToolKit(continuous=args.continuous)
+    elif args.task == 'assembling-single-toolkit':
+        task = AssemblingToolKit(continuous=args.continuous)
     else:
         raise RuntimeError('gripper version no {}'.format(args.task))
 
@@ -86,14 +89,17 @@ def main():
         obs = env.reset()
         info = None
         reward = 0
-        for _ in range(max_steps):
+        for i in range(max_steps):
+            # wait more time for objects to settle down
+            extend_secs = 0 if i<max_steps-1 else 2
+
             act = agent.act(obs, info)
             # print('obs 0', obs['color'][0].shape, obs['color'][1].shape, obs['color'][2].shape)
             # print('obs 1', obs['depth'][0].shape, obs['depth'][0].shape, obs['depth'][0].shape)
             # print('act',act)
             # print('info',info)
             episode.append((obs, act, reward, info))
-            obs, reward, done, info = env.step(act)
+            obs, reward, done, info = env.step(act, extend_secs)
             # TODO FOR DEBUG CAHNGE DONE TO FALSE
             #done = False
             total_reward += reward

@@ -12,9 +12,8 @@ import e2cnn.nn as enn
 import kornia as K
 import torchvision
 from matplotlib import pyplot as plt
-from equ_res_3 import dian_res
-from label.smooth_label_3d import get_gaussian_3d_label
-from label.label_smoothing import smooth_label
+# from equ_res_3 import dian_res
+from gr_equi_convnet import equi_gr_res
 
 class Transport:
     ''''equavariant Transport module'''
@@ -22,8 +21,7 @@ class Transport:
     # TODO by Haojie, try Resnet_ns + Resnet_ns
     #                 or Resnet    + Resenet_ns
 
-    def __init__(self, in_shape, n_rotations, crop_size, preprocess, device,
-                 network_params={}, init=False):
+    def __init__(self, in_shape, n_rotations, crop_size, preprocess, device, lite=False, init=False):
         # TODO BY HAOJIE: add lite model
         self.device = device
         self.preprocess = preprocess
@@ -31,11 +29,6 @@ class Transport:
         self.iters = 0
         self.crop_size_2 = crop_size  # crop size must be N*16 (e.g. 96)
         self.crop_size_1 = 96
-
-        self.label_type = network_params['transport']['label_type']
-        self.label_smooth = network_params['transport']['label_smooth']
-        self.label_radius = network_params['transport']['label_radius']
-        self.label_sigma = network_params['transport']['label_sigma']
 
         # Padding the image to get same size output after the cross-relation
         self.pad_size_2 = int(self.crop_size_2 / 2)
@@ -56,14 +49,18 @@ class Transport:
         if not hasattr(self, 'kernel_dim'):
             self.kernel_dim = 3
 
-        transport_Cn = network_params['transport']['N']
-        if network_params['transport']['lite']:
-            self.model_map = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
-            self.model_kernel = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(16, 32, 64, 128), init=init).to(self.device)
+        self.gspace = gspaces.Rot2dOnR2(6)
+        self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
+        if lite:
+            # self.model_map = equi_gr_res(in_dim=6, out_dim=3, N=6, middle_dim=(32, 64, 128), init=init).to(self.device)
+            # self.model_kernel = equi_gr_res(in_dim=6, out_dim=3, N=6, middle_dim=(32, 64, 128), init=init).to(self.device)
+            self.model_map = equi_gr_res(in_dim=6, out_dim=3, N=6, middle_dim=(16, 32, 64), init=init).to(self.device)
+            self.model_kernel = equi_gr_res(in_dim=6, out_dim=3, N=6, middle_dim=(16, 32, 64), init=init).to(self.device)
         else:
-            self.model_map = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
-            self.model_kernel = dian_res(in_dim=6, out_dim=3, N=transport_Cn, middle_dim=(32, 64, 128, 256),init=init).to(self.device)
-
+            # self.model_map = equi_gr_res(in_dim=6, out_dim=3, N=6, middle_dim=(64, 128, 256), init=init).to(self.device)
+            # self.model_kernel = equi_gr_res(in_dim=6, out_dim=3, N=6, middle_dim=(64, 128, 256), init=init).to(self.device)
+            self.model_map = equi_gr_res(in_dim=6, out_dim=3, N=6, middle_dim=(32, 64, 128), init=init).to(self.device)
+            self.model_kernel = equi_gr_res(in_dim=6, out_dim=3, N=6, middle_dim=(32, 64, 128), init=init).to(self.device)
 
         self.parameter = list(self.model_map.parameters()) + list(self.model_kernel.parameters())
         self.optim = torch.optim.Adam(self.parameter, lr=1e-4)
@@ -142,19 +139,10 @@ class Transport:
         itheta = np.int32(np.round(itheta)) % self.n_rotations
         # Get one-hot pixel label map.
         label_size = (self.n_rotations,) + in_img.shape[:2]
-        if self.label_type == 2: # pulse/one-hot label
-            label = torch.zeros(label_size, dtype=torch.long, device=self.device)
-            label[itheta, q[0], q[1],] = 1
-            label = label.reshape(1, -1)
-            label_i = torch.argmax(label).unsqueeze(dim=0)
-            label = smooth_label(label_i, label.numel(), self.label_smooth, 
-                               device=self.device).unsqueeze(dim=0)
-            # print('transport label', label[0, label_i], label[0, label_i-1])
-        elif self.label_type == 0:
-            label = get_gaussian_3d_label(label_size, (itheta, q[0], q[1]),
-                                          radius=self.label_radius, sigma=self.label_sigma,
-                                          device=self.device)
-            label = label.reshape(1,-1)
+        label = torch.zeros(label_size, dtype=torch.long, device=self.device)
+        label[itheta, q[0], q[1],] = 1
+        label = label.reshape(1, -1)
+        label = torch.argmax(label).unsqueeze(dim=0)
         # Get loss
         loss = F.cross_entropy(input=output, target=label)
 
