@@ -13,6 +13,7 @@ from pick_angle_model import EquRes as lite_pick_angle
 from pick_angle_model_2 import EquRes as pick_angle
 from label.smooth_label import get_angle_smooth_label as get_smooth_label
 from label.gaussian_label import gen_gaussian_label as get_gaussian_2d_label
+from label.label_smoothing import smooth_label
 
 class Attention:
     def __init__(self,in_shape,n_rotations,preprocess,device,
@@ -34,9 +35,11 @@ class Attention:
         self.pos_label_type = network_params['position']['label_type']
         self.pos_label_radius = network_params['position']['label_radius']
         self.pos_label_sigma = network_params['position']['label_sigma']
+        self.pos_label_smooth = network_params['position']['label_smooth']
         self.angle_label_type = network_params['angle']['label_type']
         self.angle_label_radius = network_params['angle']['label_radius']
         self.angle_label_sigma = network_params['angle']['label_sigma']
+        self.angle_label_smooth = network_params['angle']['label_smooth']
 
         pos_Cn = network_params['position']['N']
         
@@ -125,22 +128,34 @@ class Attention:
         # theta_i = theta / (2 * np.pi / self.n_rotations)
         # theta_i = np.int32(np.round(theta_i)) % (self.n_rotations/2)
         # label_theta = torch.as_tensor(theta_i,dtype=torch.long,device=self.device).unsqueeze(dim=0)
-        theta_i = np.round(theta / (2 * np.pi) * 360.0)
-        label_theta = get_smooth_label(angle_label=theta_i, 
-                                       angle_range=180,
-                                       label_type=self.angle_label_type,
-                                       radius=self.angle_label_radius,
-                                       omega=int(360/self.n_rotations),
-                                       sig=self.angle_label_sigma,
-                                       normalized=True)
-        label_theta = torch.as_tensor(label_theta,dtype=torch.float32,device=self.device).unsqueeze(dim=0)
+        if self.angle_label_type == 2:
+          theta_i = theta / (2 * np.pi / self.n_rotations)
+          theta_i = np.int32(np.round(theta_i) % (self.n_rotations/2))
+          label_theta = smooth_label(theta_i,self.n_rotations//2,self.angle_label_smooth,
+                                     device=self.device).unsqueeze(dim=0)
+        elif self.angle_label_type == 0:
+          theta_i = np.round(theta / (2 * np.pi) * 360.0)
+          label_theta = get_smooth_label(angle_label=theta_i, 
+                                         angle_range=180,
+                                         label_type=self.angle_label_type,
+                                         radius=self.angle_label_radius,
+                                         omega=int(360/self.n_rotations),
+                                         sig=self.angle_label_sigma,
+                                         normalized=True)
+          label_theta = torch.as_tensor(label_theta,dtype=torch.float32,
+                                        device=self.device).unsqueeze(dim=0)
+        # print('angle label', theta_i, label_theta)
         # location label
         if self.pos_label_type == 2: # pulse/one-hot label
           label_size = (1,) + in_img.shape[:2]  #(1, 320, 160)
           label = torch.zeros(label_size,dtype=torch.long,device=self.device)
           label[0, p[0], p[1],] = 1
           label = label.reshape(-1)
-          label = torch.argmax(label).unsqueeze(dim=0)
+          label_i = torch.argmax(label).unsqueeze(dim=0)
+          label = smooth_label(label_i, label.numel(), self.pos_label_smooth, 
+                               device=self.device).unsqueeze(dim=0)
+          # print('label_i', label_i)
+          # print('pos label', label[0, label_i], label[0, label_i+1])
         elif self.pos_label_type == 0: # gaussian label
           label = get_gaussian_2d_label(in_img.shape[:2], p,
                                         radius=self.pos_label_radius, 

@@ -15,6 +15,7 @@ from matplotlib import pyplot as plt
 # from equ_res_3 import dian_res
 from so2_equ_res import so2_res
 from label.smooth_label_3d import get_gaussian_3d_label
+from label.label_smoothing import smooth_label
 
 class Transport:
     ''''equavariant Transport module'''
@@ -33,6 +34,7 @@ class Transport:
         self.crop_size_1 = 96
 
         self.label_type = network_params['transport']['label_type']
+        self.label_smooth = network_params['transport']['label_smooth']
         self.label_radius = network_params['transport']['label_radius']
         self.label_sigma = network_params['transport']['label_sigma']
         irrep_kwargs = {'irrep': network_params['transport']['irrep'],
@@ -154,7 +156,10 @@ class Transport:
             label = torch.zeros(label_size, dtype=torch.long, device=self.device)
             label[itheta, q[0], q[1],] = 1
             label = label.reshape(1, -1)
-            label = torch.argmax(label).unsqueeze(dim=0)
+            label_i = torch.argmax(label).unsqueeze(dim=0)
+            label = smooth_label(label_i, label.numel(), self.label_smooth, 
+                               device=self.device).unsqueeze(dim=0)
+            # print('transport label', label[0, label_i], label[0, label_i-1])
         elif self.label_type == 0:
             label = get_gaussian_3d_label(label_size, (itheta, q[0], q[1]),
                                           radius=self.label_radius, sigma=self.label_sigma,
