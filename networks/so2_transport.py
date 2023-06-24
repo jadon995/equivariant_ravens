@@ -60,9 +60,10 @@ class Transport:
         if not hasattr(self, 'kernel_dim'):
             self.kernel_dim = 3
 
-        self.n_ori_align = 6 # n_rotations % n_ori_align == 0
-        self.n_dim_per_ori = 1
-        
+        self.n_ori_align = 4 # n_rotations % n_ori_align == 0
+        self.n_dim_per_ori = 3
+        assert self.n_rotations % self.n_ori_align == 0, "Must be divided with no remain"
+
         if network_params['transport']['lite']:
             # self.model_map = so2_res(in_dim=6, out_dim=3, middle_dim=(16, 32, 64, 128),
             #                          init=init, **irrep_kwargs).to(self.device)
@@ -126,29 +127,25 @@ class Transport:
         # Ideal arrangement is [n_rotations, n_dim_per_ori, 96, 96]
         kernel_raw = kernel_raw.reshape((self.n_dim_per_ori, self.n_rotations, 
                                         self.crop_size_1, self.crop_size_1))
-        kernel_raw = kernel_raw.permute(1,0,2,3)
+        kernel_raw = kernel_raw.permute(1,0,2,3) # [rotations, channel, H, W]
+        kernel_aligned = torch.zeros_like(kernel_raw).repeat(1, self.n_ori_align, 1, 1) # [rotations, ori*channel, H, W]
+
+        # orientation alignment
+        step = self.n_rotations // self.n_ori_align
+        for i in range(0, self.n_rotations):
+            # TODO Double-check the order of the sparse ori
+            index = torch.arange(i, i + self.n_rotations, step) % self.n_rotations
+            # print(index)
+            kernel_aligned[i] = kernel_raw[index].permute(1,0,2,3).reshape(-1, self.crop_size_1, self.crop_size_1)
+
         # spatial alignment
-        kernel_raw = K.geometry.rotate(kernel_raw,
+        kernel_aligned = K.geometry.rotate(kernel_aligned,
                                        torch.from_numpy(np.linspace(0., 360., self.n_rotations,
                                                                     endpoint=False, dtype=np.float32)).to(self.device),
                                        mode='nearest')
-        kernel = kernel_raw[:, :, l:r, b:u]
+        kernel = kernel_aligned[:, :, l:r, b:u]
 
-        # orientation alignment
-        # kernel_aligned = torch.zeros((self.n_rotations, self.n_ori_align * self.n_dim_per_ori, 
-        #                               self.crop_size_1, self.crop_size_1), 
-        #                              dtype=torch.float32, device=self.device)
-        kernel_aligned = torch.zeros_like(kernel).repeat(1, self.n_ori_align, 1, 1)
-        # print('kernel_aligned', kernel_aligned.shape)
-        step = self.n_rotations // self.n_ori_align
-        # TODO Double-check the order of the selected ori
-        for i in range(0, self.n_rotations):
-            # print(torch.arange(i, i + self.n_rotations, step) % self.n_rotations)
-            kernel_aligned[i] = kernel[torch.arange(-i, -i + self.n_rotations, step) % self.n_rotations].reshape(-1, self.crop_size_2+1, self.crop_size_2+1)
-        # print(kernel_aligned.shape)
-
-        # output = F.conv2d(input=logits, weight=kernel)
-        output = F.conv2d(input=logits, weight=kernel_aligned)
+        output = F.conv2d(input=logits, weight=kernel)
 
         if softmax:
             output_shape = output.shape
