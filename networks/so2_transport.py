@@ -134,7 +134,7 @@ class Transport:
         step = self.n_rotations // self.n_ori_align
         for i in range(0, self.n_rotations):
             # TODO Double-check the order of the sparse ori
-            index = torch.arange(i, i + self.n_rotations, step) % self.n_rotations
+            index = torch.arange(-i, -i + self.n_rotations, step) % self.n_rotations
             # print(index)
             kernel_aligned[i] = kernel_raw[index].permute(1,0,2,3).reshape(-1, self.crop_size_1, self.crop_size_1)
 

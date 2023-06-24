@@ -337,8 +337,9 @@ class SO2ResGroup(torch.nn.Module):
         
         rho = self.r2_act.fibergroup.spectral_regular_representation(*irreps, name=None)
         self.r2_act_out = gspaces.rot2dOnR2(N=N_out)
-
+        
         self.final = torch.nn.Sequential(OrderedDict([
+            ('pre-final-relu', nn.FourierELU(self.r2_act, middle_dim[0], irreps=irreps, N=num_of_samples, inplace=True)),
             ('final_e2conv', nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
                                        nn.FieldType(self.r2_act, [rho]*out_dim),
                                        kernel_size=3, padding=1, stride=1)),
