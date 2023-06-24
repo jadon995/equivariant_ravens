@@ -351,8 +351,8 @@ class SO2ResGroup(torch.nn.Module):
             if isinstance(module, nn.R2Conv):
                 if init:
                     print(name)
-                    #nn.init.generalized_he_init(module.weights.data, module.basisexpansion)
-                    nn.init.deltaorthonormal_init(module.weights.data, module.basisexpansion)
+                    nn.init.generalized_he_init(module.weights.data, module.basisexpansion)
+                    # nn.init.deltaorthonormal_init(module.weights.data, module.basisexpansion)
                 else:
                     pass
     

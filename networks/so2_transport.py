@@ -60,8 +60,8 @@ class Transport:
         if not hasattr(self, 'kernel_dim'):
             self.kernel_dim = 3
 
-        self.n_ori_align = 4 # n_rotations % n_ori_align == 0
-        self.n_dim_per_ori = 3
+        self.n_ori_align = 36 # n_rotations % n_ori_align == 0
+        self.n_dim_per_ori = 1
         assert self.n_rotations % self.n_ori_align == 0, "Must be divided with no remain"
 
         if network_params['transport']['lite']:
@@ -144,6 +144,12 @@ class Transport:
                                                                     endpoint=False, dtype=np.float32)).to(self.device),
                                        mode='nearest')
         kernel = kernel_aligned[:, :, l:r, b:u]
+
+        # apply softmax
+        logits = F.softmax(logits, dim=1)
+        kernel = F.softmax(kernel, dim=1)
+        # print(logits.shape, kernel.shape)
+        # print(logits.sum(), kernel.sum())
 
         output = F.conv2d(input=logits, weight=kernel)
 
