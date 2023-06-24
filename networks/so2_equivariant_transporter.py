@@ -16,7 +16,8 @@ import e2cnn.nn as enn
 # from equ_attention import Attention
 
 from so2_equ_attention import Attention
-from so2_equ_transport import Transport
+# from so2_equ_transport import Transport
+from so2_transport import Transport
 
 from raven import cameras
 from raven import utils

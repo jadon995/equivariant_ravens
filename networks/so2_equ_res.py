@@ -4,7 +4,7 @@ import escnn.nn as nn
 import torch.nn.functional as F
 from collections import OrderedDict
 from escnn_extension.fourier_gapool import FourierGroupAvgPool
-from escnn_extension.inverse_fourier_transform import IFTPointwist
+from escnn_extension.inverse_fourier_transform import IFTPointwist as IFTPointwise
 
 class SO2ResBlock(torch.nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size, N=-1, 
@@ -319,10 +319,56 @@ class so2_res(torch.nn.Module):
         # out = nn.GeometricTensor(out, self.out_type)
         return x,out
     
-# model = so2_res(6,3,-1,(16, 32, 64, 128),True).to(device)
+class SO2ResGroup(torch.nn.Module):
+    def __init__(self,in_dim,out_dim,N_out,middle_dim=(32, 64, 128, 256),init=False, **irrep_kwargs):
+        super(SO2ResGroup, self).__init__()
+        
+        max_irrep = irrep_kwargs['irrep']
+        num_of_samples = irrep_kwargs['sample']
 
-# model.eval()
-# with torch.no_grad():
-#     image_in = torch.rand(1, 6, 320, 320).to(device)
-#     _, feat_out = model(image_in)
-#     print(feat_out.shape)
+        self.r2_act = gspaces.rot2dOnR2(N=-1) # infinite group
+        irreps = [(f,) for f in range(max_irrep+1)]
+
+        self.main_block = SO2ResUnet(n_input_channel=in_dim,
+                                     n_output_channel=middle_dim[0],
+                                     n_middle_channels=middle_dim,
+                                     irreps=irreps,
+                                     num_of_samples=num_of_samples)
+        
+        rho = self.r2_act.fibergroup.spectral_regular_representation(*irreps, name=None)
+        self.r2_act_out = gspaces.rot2dOnR2(N=N_out)
+
+        self.final = torch.nn.Sequential(OrderedDict([
+            ('final_e2conv', nn.R2Conv(nn.FieldType(self.r2_act, [rho]*middle_dim[0]),
+                                       nn.FieldType(self.r2_act, [rho]*out_dim),
+                                       kernel_size=3, padding=1, stride=1)),
+            ('discrete_map', IFTPointwise(self.r2_act, self.r2_act_out, out_dim, irreps,
+                                          N=self.r2_act_out.regular_repr.size))
+        ]))
+
+        for name, module in self.named_modules():
+            if isinstance(module, nn.R2Conv):
+                if init:
+                    print(name)
+                    #nn.init.generalized_he_init(module.weights.data, module.basisexpansion)
+                    nn.init.deltaorthonormal_init(module.weights.data, module.basisexpansion)
+                else:
+                    pass
+    
+    def forward(self, x):
+        out = self.main_block(x)
+        out = self.final(out)
+
+        return x, out
+
+
+if __name__ == "__main__":
+    device = 'cuda:0'
+    kwargs = {'irrep': 3, 'sample':16}
+    model = SO2ResGroup(6, 2, 8,(16, 32, 64, 128), True, **kwargs).to(device)
+
+    model.eval()
+    with torch.no_grad():
+        image_in = torch.rand(1, 6, 320, 320).to(device)
+        _, feat_out = model(image_in)
+        print(feat_out.shape)
