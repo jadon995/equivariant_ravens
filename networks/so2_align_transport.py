@@ -40,6 +40,10 @@ class Transport:
         self.label_sigma = network_params['transport']['label_sigma']
         irrep_kwargs = {'irrep': network_params['transport']['irrep'],
                         'sample': network_params['transport']['sample']}
+        
+        self.n_ori_align = network_params['transport']['n_ori_align'] 
+        self.n_dim_per_ori = 1
+        assert self.n_rotations % self.n_ori_align == 0, "Must be divided with no remain"
 
         # Padding the image to get same size output after the cross-relation
         self.pad_size_2 = int(self.crop_size_2 / 2)
@@ -59,10 +63,6 @@ class Transport:
             self.output_dim = 3
         if not hasattr(self, 'kernel_dim'):
             self.kernel_dim = 3
-
-        self.n_ori_align = 36 # n_rotations % n_ori_align == 0
-        self.n_dim_per_ori = 1
-        assert self.n_rotations % self.n_ori_align == 0, "Must be divided with no remain"
 
         if network_params['transport']['lite']:
             # self.model_map = so2_res(in_dim=6, out_dim=3, middle_dim=(16, 32, 64, 128),

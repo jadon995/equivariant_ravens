@@ -8,7 +8,8 @@ def smooth_label(target, num_tokens, smooth_factor=0.0, device='cpu'):
     one_hot[target] = 1 - smooth_factor
     return one_hot
 
-label = smooth_label(4, 10, 0.2)
-print(label)
-print(label.sum())
-print(label.shape)
+if __name__ == '__main__':
+    label = smooth_label(4, 10, 0.2)
+    print(label)
+    print(label.sum())
+    print(label.shape)

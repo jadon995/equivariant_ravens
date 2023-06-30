@@ -11,26 +11,35 @@ import tensorflow as tf
 import torch
 import torch.backends.cudnn as cudnn
 
-from networks.non_equi_transporter import TransporterAgent as non_equi_agent
-from networks.femi_transporter import TransporterAgent as femi_agent
-from networks.semi_transporter import TransporterAgent as semi_agent
-from networks.equivariant_transporter_tail import TransporterAgent as equ_agent_tail
+# from networks.non_equi_transporter import TransporterAgent as non_equi_agent
+# from networks.femi_transporter import TransporterAgent as femi_agent
+# from networks.semi_transporter import TransporterAgent as semi_agent
+# from networks.equivariant_transporter_tail import TransporterAgent as equ_agent_tail
 from networks.equivariant_transporter import TransporterAgent as equ_agent
-from networks.gr_non_equi_transporter import TransporterAgent as gr_agent
-from networks.gr_equi_transporter import TransporterAgent as gr_equ_agent
+# from networks.gr_non_equi_transporter import TransporterAgent as gr_agent
+# from networks.gr_equi_transporter import TransporterAgent as gr_equ_agent
 from networks.so2_equivariant_transporter import TransporterAgent as so2_equ_agent
+from networks.so2_align_transporter import TransporterAgent as so2_align_agent
 
 # import faulthandler; faulthandler.enable()
 
-# parser = argparse.ArgumentParser(description='ravens')
+parser = argparse.ArgumentParser(description='ravens')
+parser.add_argument('--config_file', type=str, default='train.yaml')
 # parser.add_argument('--train_dir', type=str, default='.')
 # parser.add_argument('--data_dir', type=str, default='.')
-# parser.add_argument('--task', type=str, default='block-insertion')
-# parser.add_argument('--n_demos', type=int,default=10)
-# parser.add_argument('--n_steps', type=int,default=10000) # the total train step n_steps/intervel = epoch
-# parser.add_argument('--interval', type=int,default=1000) # the training step for one epoch interval/n_demos = the number of resued data
+parser.add_argument('--task', type=str, default='block-insertion')
+parser.add_argument('--n_demos', type=int, default=10)
+parser.add_argument('--n_rotations', type=int, default=36)
+parser.add_argument('--agent', type=str, default='so2-align')
+parser.add_argument('--postfix', type=str, default='')
+parser.add_argument('--n_align', type=int, default=12)
+parser.add_argument('--n_steps', type=int,default=10000) # the total train step n_steps/intervel = epoch
+parser.add_argument('--interval', type=int,default=1000) # the training step for one epoch interval/n_demos = the number of resued data
 # parser.add_argument('--n_runs', type=int,default=1)# not important
-# parser.add_argument('--gpu', type=int, default=1)
+parser.add_argument('--gpu_id', type=int, default=0)
+parser.add_argument('--seed', type=int, default=0)
+parser.add_argument('--logging', action='store_true', default=False)
+
 # parser.add_argument('--lite', action='store_true', default=False)
 # parser.add_argument('--load', type=int, default=0)
 # parser.add_argument('--angle_lite', action='store_true', default=False)
@@ -45,82 +54,92 @@ from networks.so2_equivariant_transporter import TransporterAgent as so2_equ_age
 # parser.add_argument('--equ_so2', action='store_true', default=False)
 
 # parser.add_argument('--off_logger', action='store_true', default=False)
-# args = parser.parse_args()
+cmd_args = parser.parse_args()
 
 def main():
     # load arguments
-    parser = argparse.ArgumentParser(description='ravens')
-    parser.add_argument('--config_file', type=str, required=True, help='the name of configuration file')
-    arguments = parser.parse_args()
-    config_name = arguments.config_file
+    # parser = argparse.ArgumentParser(description='ravens')
+    # cmd_args = parser.parse_args()
+    config_name = cmd_args.config_file
 
     with open(os.path.join('configs', config_name), 'r') as file:
         config_data = yaml.load(file, Loader=yaml.FullLoader)
     args = edict(config_data)
 
-    train_dataset = Dataset(os.path.join(args.data_dir, f'{args.task}-train'))
-    print(os.path.join(args.data_dir, f'{args.task}-train'))
+    train_dataset = Dataset(os.path.join(args.data_dir, f'{cmd_args.task}-train'))
+    print(os.path.join(args.data_dir, f'{cmd_args.task}-train'))
     (obs, act, _, _), _ = train_dataset.sample()
-    #test_dataset = Dataset(os.path.join(args.data_dir, f'{args.task}-test'))
+    #test_dataset = Dataset(os.path.join(args.data_dir, f'{cmd_args.task}-test'))
     for train_run in range(args.n_runs):
     #for train_run in range(1):
         #train_run = train_run+1
-        name = f'{args.task}-{args.n_rotations}-{args.n_demos}-{train_run}'
+        name = f'{cmd_args.task}-{cmd_args.n_rotations}-{cmd_args.n_demos}-{cmd_args.seed}'
         
         writer = None
         #set tensorborad logger
-        if args.logging:
+        if cmd_args.logging:
             curr_time = datetime.datetime.now().strftime('%Y%m%d')
             log_dir = os.path.join(args.log_dir, 'logs', name,
-                                   curr_time+'-{}{}'.format(args.model, args.model_postfix))
+                                   curr_time+'-{}{}'.format(cmd_args.model, cmd_args.postfix))
+            
             writer = tf.summary.create_file_writer(log_dir)
 
         # set seed
-        np.random.seed(train_run+1)
-        torch.set_num_threads(train_run+1)
-        torch.manual_seed(train_run+1)
+        np.random.seed(cmd_args.seed + 1)
+        # torch.set_num_threads(train_run+1)
+        torch.set_num_threads(4)
+        torch.manual_seed(cmd_args.seed + 1)
         cudnn.benchmark = False
         cudnn.deterministic = True
 
         # Limit random sampling during training to a fixed dataset.
         max_demos = train_dataset.n_episodes
-        episodes = np.random.choice(range(max_demos), args.n_demos, False)
+        episodes = np.random.choice(range(max_demos), cmd_args.n_demos, False)
         train_dataset.set(episodes)
-        print('use {} demos and train {} steps per epoch'.format(args.n_demos,args.interval))
+        print('use {} demos and train {} steps per epoch'.format(cmd_args.n_demos,cmd_args.interval))
         # train agent and save snapshot
-        if args.model == 'equ':
+        if cmd_args.model == 'equ':
             print('equvairant agent')
             network_params = args.equ
-            agent = equ_agent(name=name,task=args.task,root_dir=args.checkpoint_dir,device=args.gpu_id,
-                              n_rotations=args.n_rotations,load=args.load,network_params=network_params,
-                              init=args.init,postfix=args.model_postfix)
+            agent = equ_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
+                              n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
+                              init=args.init,postfix=cmd_args.postfix)
         # if args.femi:
         #     print('femi_agent')
-        #     agent = femi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite,init = args.init)
+        #     agent = femi_agent(name=name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite,init = args.init)
         # if args.semi:
         #     print('semi_agent')
-        #     agent = semi_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite,load=args.load,init = args.init)
+        #     agent = semi_agent(name=name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite,load=args.load,init = args.init)
         # if args.non:
         #     print('no equivariant agent')
-        #     agent = non_equi_agent(name=name,task=args.task,root_dir=args.data_dir,load=args.load)
+        #     agent = non_equi_agent(name=name,task=cmd_args.task,root_dir=args.data_dir,load=args.load)
         # if args.tail:
         #     print('equvairant agent with tail network')
-        #     agent = equ_agent_tail(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite, init = args.init)
+        #     agent = equ_agent_tail(name=name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite, init = args.init)
         # if args.grconv:
         #     print('non equivariant grconvnet agent')
-        #     agent = gr_agent(name=name,task=args.task,root_dir=args.data_dir,load=args.load)
+        #     agent = gr_agent(name=name,task=cmd_args.task,root_dir=args.data_dir,load=args.load)
         # if args.equ_grconv:
         #     print('equvariant grconvnet agent')
-        #     agent = gr_equ_agent(name=name,task=args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite,init = args.init)
-        if args.model == 'so2':
-            print('so(2) equvariant agent')
+        #     agent = gr_equ_agent(name=name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite,init = args.init)
+        elif cmd_args.model == 'so2':
+            print('so(2) equivariant agent')
             network_params = args.so2
-            print(network_params)
-            agent = so2_equ_agent(name=name,task=args.task,root_dir=args.checkpoint_dir,device=args.gpu_id,
-                                  n_rotations=args.n_rotations,load=args.load,network_params=network_params,
-                                  init=args.init,postfix=args.model_postfix)
-        while agent.total_steps<args.n_steps:
-            for _ in range(args.interval):
+            # print(network_params)
+            agent = so2_equ_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
+                                  n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
+                                  init=args.init,postfix=cmd_args.postfix)
+        elif cmd_args.model == 'so2-align':
+            print('so(2)-align equivariant agent')
+            network_params = args.so2
+            network_params['transport']['n_ori_align'] = cmd_args.n_align
+            agent = so2_align_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
+                                  n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
+                                  init=args.init,postfix=cmd_args.postfix)
+        else:
+            raise Exception('Invalid model type')
+        while agent.total_steps<cmd_args.n_steps:
+            for _ in range(cmd_args.interval):
                 agent.train(train_dataset,writer)
             agent.save()
 
