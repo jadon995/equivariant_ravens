@@ -230,7 +230,8 @@ class Environment(gym.Env):
         return obs, 0.0, True, self.info
 
     # Step simulator asynchronously until objects settle.
-    while not self.is_static:
+    t0 = time.time()
+    while not self.is_static and (time.time() - t0) < 5:
       p.stepSimulation()
     
     # wait for extra time for objects settling
