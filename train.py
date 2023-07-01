@@ -80,7 +80,7 @@ def main():
         if cmd_args.logging:
             curr_time = datetime.datetime.now().strftime('%Y%m%d')
             log_dir = os.path.join(args.log_dir, 'logs', name,
-                                   curr_time+'-{}{}'.format(cmd_args.model, cmd_args.postfix))
+                                   curr_time+'-{}{}'.format(cmd_args.agent, cmd_args.postfix))
             
             writer = tf.summary.create_file_writer(log_dir)
 
@@ -98,7 +98,7 @@ def main():
         train_dataset.set(episodes)
         print('use {} demos and train {} steps per epoch'.format(cmd_args.n_demos,cmd_args.interval))
         # train agent and save snapshot
-        if cmd_args.model == 'equ':
+        if cmd_args.agent == 'equ':
             print('equvairant agent')
             network_params = args.equ
             agent = equ_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
@@ -122,14 +122,14 @@ def main():
         # if args.equ_grconv:
         #     print('equvariant grconvnet agent')
         #     agent = gr_equ_agent(name=name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite,load=args.load, angle_lite = args.angle_lite,init = args.init)
-        elif cmd_args.model == 'so2':
+        elif cmd_args.agent == 'so2':
             print('so(2) equivariant agent')
             network_params = args.so2
             # print(network_params)
             agent = so2_equ_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
                                   n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
                                   init=args.init,postfix=cmd_args.postfix)
-        elif cmd_args.model == 'so2-align':
+        elif cmd_args.agent == 'so2-align':
             print('so(2)-align equivariant agent')
             network_params = args.so2
             network_params['transport']['n_ori_align'] = cmd_args.n_align
@@ -139,6 +139,7 @@ def main():
         else:
             raise Exception('Invalid model type')
         while agent.total_steps<cmd_args.n_steps:
+            # interval = cmd_args.interval if agent.total_steps <=10000 else 5000 
             for _ in range(cmd_args.interval):
                 agent.train(train_dataset,writer)
             agent.save()
