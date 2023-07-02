@@ -87,7 +87,7 @@ def main():
         # set seed
         np.random.seed(cmd_args.seed + 1)
         # torch.set_num_threads(train_run+1)
-        torch.set_num_threads(4)
+        torch.set_num_threads(1)
         torch.manual_seed(cmd_args.seed + 1)
         cudnn.benchmark = False
         cudnn.deterministic = True

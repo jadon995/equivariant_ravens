@@ -11,26 +11,37 @@ agent=so2-align
 seed=0
 gpu_id=0
 
-# pwd
 for i in ${task_ids[*]};
 do      
     for n_rotation in ${n_rotations[*]};
     do  
         for n_align in ${n_aligns[*]};
         do
-        echo Task: ${tasks[${i}]}-${n_rotation}-${n_demos[${i}]}-${seed}/${agent}h${n_align};
-        python train.py --task ${tasks[${i}]} --n_demos ${n_demos[${i}]} --n_rotations ${n_rotation} \
-                --agent ${agent} --n_align ${n_align} --n_steps ${n_steps} --interval ${interval} \
-                --gpu_id ${gpu_id} --logging --postfix h${n_align} --seed ${seed}
-        sleep 1m
+            echo Train Task: ${tasks[${i}]}-${n_rotation}-${n_demos[${i}]}-${seed}/${agent}h${n_align} --gpu_id ${gpu_id};
+            gnome-terminal --wait -- /bin/bash  \
+                -c "source ~/.bashrc; cd ~/workspace/equivariant_ravens; pwd;   \
+                echo Training Task: ${tasks[${i}]}-${n_rotation}-${n_demos[${i}]}-${seed}/${agent}h${n_align};   \
+                python train.py --task ${tasks[${i}]} --n_demos ${n_demos[${i}]} --n_rotations ${n_rotation} \
+                    --agent ${agent} --n_align ${n_align} --n_steps ${n_steps} --interval ${interval} \
+                    --gpu_id ${gpu_id} --logging --postfix h${n_align} --seed ${seed} \
+
+                sleep 30;"
+            sleep 1
 
             for n_test in ${n_tests[*]};
             do
-                echo python gripper_test.py --task ${tasks[${i}]} --n_demos ${n_demos[${i}]} --n_rotations ${n_rotation} \
-                     --agent ${agent} --n_align ${n_align} --n_steps ${n_test} --gpu_id ${gpu_id} \
-                    --disp --postfix h${n_align} --seed ${seed}
-                sleep 1m
+                echo Test Task: ${tasks[${i}]}-${n_rotation}-${n_demos[${i}]}-${seed}/${agent}h${n_align}-${n_test} --gpu_id ${gpu_id};
+                gnome-terminal --wait -- /bin/bash  \
+                    -c "source ~/.bashrc; cd ~/workspace/equivariant_ravens; pwd;   \
+                    echo Testing Task: ${tasks[${i}]}-${n_rotation}-${n_demos[${i}]}-${seed}/${agent}h${n_align} --gpu_id ${gpu_id};   \
+                    python gripper_test.py --task ${tasks[${i}]} --n_demos ${n_demos[${i}]} --n_rotations ${n_rotation} \
+                        --agent ${agent} --n_align ${n_align} --n_steps ${n_test} --gpu_id ${gpu_id} \
+                        --postfix h${n_align} --seed ${seed} #--disp  \
+
+                    sleep 30;"
+                sleep 1
             done;
         done;
     done
 done;
+echo Done!
