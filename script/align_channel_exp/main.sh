@@ -22,12 +22,17 @@ do
         echo python train.py --task ${tasks[${i}]} --n_demos ${n_demos[${i}]} --n_rotations ${n_rotation} \
                 --agent ${agent} --n_align ${n_align} --n_steps ${n_steps} --interval ${interval} \
                 --gpu_id ${gpu_id} --logging --postfix h${n_align} --seed ${seed}
-        echo python gripper_test.py --task ${tasks[${i}]} --n_demos ${n_demos[${i}]} --n_rotations ${n_rotation} \
-                 --agent ${agent} --n_align ${n_align} --n_steps ${n_steps} --gpu_id ${gpu_id} \
-                 --disp --postfix h${n_align} --entire --seed ${seed}
+        sleep 1m
+
+            for n_test in ${n_tests[*]};
+            do
+                echo python gripper_test.py --task ${tasks[${i}]} --n_demos ${n_demos[${i}]} --n_rotations ${n_rotation} \
+                     --agent ${agent} --n_align ${n_align} --n_steps ${n_test} --gpu_id ${gpu_id} \
+                    --disp --postfix h${n_align} --seed ${seed}
+                sleep 1m
+            done;
         done;
     done
 done;
 
-# python gripper_test.py --task assembling-kits-3dtoolkit --n_demos 100 --n_rotations 36 --agent so2-align --n_align 2 --n_steps 10000 --gpu_id 0 --disp --postfix h2
-# --config_file train.yaml --entire --seed 0
+echo Done!
