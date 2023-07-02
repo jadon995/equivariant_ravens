@@ -32,7 +32,7 @@ do
                 do
                     python gripper_test.py --task ${task} --n_demos ${n_demo} --n_rotations ${n_rotation} \
                         --agent ${agent} --n_align ${n_align} --n_steps ${n_test} --gpu_id ${gpu_id} \
-                        --disp --seed ${seed}
+                        --seed ${seed} # --disp
                     sleep 1m
                 done;
             done;

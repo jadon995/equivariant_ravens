@@ -21,7 +21,7 @@ do
             do
                 # training
                 echo Task: ${task}-${n_rotation}-${n_demo}-${seed}/${agent};
-                echo python train.py --task ${task} --n_demos ${n_demo} --n_rotations ${n_rotation} \
+                python train.py --task ${task} --n_demos ${n_demo} --n_rotations ${n_rotation} \
                         --agent ${agent} --n_align ${n_align} --n_steps ${n_step} --interval ${interval} \
                         --gpu_id ${gpu_id} --logging --seed ${seed}
                 sleep 1m
@@ -29,9 +29,9 @@ do
                 # testing
                 for n_test in ${n_tests[*]};
                 do
-                    echo python gripper_test.py --task ${task} --n_demos ${n_demo} --n_rotations ${n_rotation} \
+                    python gripper_test.py --task ${task} --n_demos ${n_demo} --n_rotations ${n_rotation} \
                         --agent ${agent} --n_align ${n_align} --n_steps ${n_test} --gpu_id ${gpu_id} \
-                        --disp --seed ${seed}
+                        --seed ${seed} #--disp
                     sleep 1m
                 done;
             done;
