@@ -203,13 +203,13 @@ def main():
                 # with open(os.path.join(args.test_dir, test_dir, f'{name}-{test_step}.pkl'),'wb') as f:
                 #     pickle.dump(results, f)
                 
-                model_dir = '{}{}'.format(cmd_args.agent, cmd_args.postfix)
-                if not os.path.exists(os.path.join(args.test_dir, name)):
-                    os.makedirs(os.path.join(args.test_dir, name))
-                if not os.path.exists(os.path.join(args.test_dir, name, model_dir)):
-                    os.makedirs(os.path.join(args.test_dir, name, model_dir))
-                with open(os.path.join(args.test_dir, name, model_dir, f'{test_step}.pkl'),'wb') as f:
-                    pickle.dump(results, f)
+            model_dir = '{}{}'.format(cmd_args.agent, cmd_args.postfix)
+            if not os.path.exists(os.path.join(args.test_dir, name)):
+                os.makedirs(os.path.join(args.test_dir, name))
+            if not os.path.exists(os.path.join(args.test_dir, name, model_dir)):
+                os.makedirs(os.path.join(args.test_dir, name, model_dir))
+            with open(os.path.join(args.test_dir, name, model_dir, f'{test_step}.pkl'),'wb') as f:
+                pickle.dump(results, f)
                 
                 
 
