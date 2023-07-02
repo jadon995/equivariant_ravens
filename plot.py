@@ -26,27 +26,46 @@ import tensorflow as tf
 
 
 parser = argparse.ArgumentParser(description='ravens')
-parser.add_argument('--root_dir', type=str, default='./test_equi')
+parser.add_argument('--root_dir', type=str, default='./test')
 parser.add_argument('--disp', action='store_true', default=False)
 parser.add_argument('--task', type=str, default='block-insertion')
-parser.add_argument('--agent', type=str, default='equi_tn')
-parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
 parser.add_argument('--n_rotations', type=int,default=36)# the demo used for testing
+parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
+parser.add_argument('--agent', type=str, default='')
+parser.add_argument('--seed', type=int, default=0)
+
 args = parser.parse_args()
 
 
 
 def main(args):
-  name = f'{args.task}-{args.n_rotations}-{args.n_demos}-'
+  name = f'{args.task}-{args.n_rotations}-{args.n_demos}-{args.seed}'
   print(name)
 
-  # Load and print results to console.
-  path = args.root_dir
+  # # Load and print results to console.
+  # path = args.root_dir
+  # curve = []
+  # for fname in tf.io.gfile.listdir(path):
+  #   fname = os.path.join(path, fname)
+  #   if name in fname and '.pkl' in fname:
+  #     n_steps = int(fname[(fname.rfind('-') + 1):-4])
+  #     data = pickle.load(open(fname, 'rb'))
+  #     rewards = []
+  #     for reward, _ in data:
+  #       rewards.append(reward)
+  #     score = np.mean(rewards)
+  #     std = np.std(rewards)
+  #     curve.append((n_steps, score, std))
+  # curve.sort()
+  # for log in curve:
+  #   print(f'  {log[0]} steps:\t{log[1]:.4f}%\t± {log[2]:.4f}%')
+
+  path = os.path.join(args.root_dir, name, args.agent)
   curve = []
   for fname in tf.io.gfile.listdir(path):
     fname = os.path.join(path, fname)
     if name in fname and '.pkl' in fname:
-      n_steps = int(fname[(fname.rfind('-') + 1):-4])
+      n_steps = int(fname[(fname.rfind('/') + 1):-4])
       data = pickle.load(open(fname, 'rb'))
       rewards = []
       for reward, _ in data:
@@ -56,17 +75,17 @@ def main(args):
       curve.append((n_steps, score, std))
   curve.sort()
   for log in curve:
-    print(f'  {log[0]} steps:\t{log[1]:.2f}%\t± {log[2]:.2f}%')
+    print(f'  {log[0]} steps:\t{log[1]:.4f}%\t± {log[2]:.4f}%')
 
   # Plot results over training steps.
-  title = f'{args.agent} on {args.task} w/ {args.n_demos} demos'
+  title = f'{args.agent} on {name}'
   ylabel = 'Testing Task Success (%)'
   xlabel = '# of Training Steps'
   if args.disp:
     logs = {}
     curve = np.array(curve)
     logs[name] = (curve[:, 0], curve[:, 1], curve[:, 2])
-    fname = os.path.join(path, f'{name}-plot.png')
+    fname = os.path.join(path, 'plot.png')
     utils.plot(fname, title, ylabel, xlabel, data=logs, ylim=[0, 1])
     print(f'Done. Plot image saved to: {fname}')
 

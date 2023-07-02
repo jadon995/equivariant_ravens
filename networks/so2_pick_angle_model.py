@@ -190,7 +190,7 @@ class SO2ResNet(torch.nn.Module):
         for name, module in self.named_modules():
             if isinstance(module, nn.R2Conv):
                 if init:
-                    print(name)
+                    # print(name)
                     #nn.init.generalized_he_init(module.weights.data, module.basisexpansion)
                     nn.init.deltaorthonormal_init(module.weights.data, module.basisexpansion)
                 else:
