@@ -253,3 +253,7 @@ class TransporterAgent:
         self.attention.save(attention_fname1, attention_fname2)
         self.transport.save(transport_fname1, transport_fname2)
         print('save the snapshot to {}'.format(self.models_dir))
+
+    def clear(self):
+        self.attention.clear()
+        self.transport.clear()

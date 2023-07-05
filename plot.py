@@ -20,7 +20,7 @@ import pickle
 
 import argparse
 import numpy as np
-from ravens.utils import utils
+# from ravens.utils import utils
 from sympy import root
 import tensorflow as tf
 
@@ -78,16 +78,16 @@ def main(args):
     print(f'  {log[0]} steps:\t{log[1]:.4f}%\t± {log[2]:.4f}%')
 
   # Plot results over training steps.
-  title = f'{args.agent} on {name}'
-  ylabel = 'Testing Task Success (%)'
-  xlabel = '# of Training Steps'
-  if args.disp:
-    logs = {}
-    curve = np.array(curve)
-    logs[name] = (curve[:, 0], curve[:, 1], curve[:, 2])
-    fname = os.path.join(path, 'plot.png')
-    utils.plot(fname, title, ylabel, xlabel, data=logs, ylim=[0, 1])
-    print(f'Done. Plot image saved to: {fname}')
+  # title = f'{args.agent} on {name}'
+  # ylabel = 'Testing Task Success (%)'
+  # xlabel = '# of Training Steps'
+  # if args.disp:
+  #   logs = {}
+  #   curve = np.array(curve)
+  #   logs[name] = (curve[:, 0], curve[:, 1], curve[:, 2])
+  #   fname = os.path.join(path, 'plot.png')
+  #   utils.plot(fname, title, ylabel, xlabel, data=logs, ylim=[0, 1])
+  #   print(f'Done. Plot image saved to: {fname}')
 
 if __name__ == '__main__':
   main(args)

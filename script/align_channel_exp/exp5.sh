@@ -2,7 +2,7 @@
 task_ids=(1)
 tasks=(stack-block-pyramid assembling-kits-3dtoolkit)
 n_rotations=(36 360)
-n_demos=(100)
+n_demos=(10)
 n_aligns=(2 4 6 12 18 36)
 n_steps=10000
 interval=2000

@@ -143,6 +143,9 @@ def main():
             for _ in range(cmd_args.interval):
                 agent.train(train_dataset,writer)
             agent.save()
+        
+        # clear the model
+        agent.clear()
 
 if __name__=="__main__":
     main()

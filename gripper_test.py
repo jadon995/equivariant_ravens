@@ -33,6 +33,7 @@ from networks.so2_align_transporter import TransporterAgent as so2_align_agent
 
 import faulthandler; faulthandler.enable()
 
+# load arguments
 parser = argparse.ArgumentParser(description='ravens_test')
 parser.add_argument('--config_file', type=str, default='train.yaml')
 # parser.add_argument('--root_dir', type=str, default='.')
@@ -67,17 +68,11 @@ parser.add_argument('--seed', type=int, default=0)
 # parser.add_argument('--equ_so2', action='store_true', default=False)
 cmd_args = parser.parse_args()
 
+with open(os.path.join('configs', cmd_args.config_file), 'r') as file:
+    config_data = yaml.load(file, Loader=yaml.FullLoader)
+args = edict(config_data)
+
 def main():
-    # load arguments
-    # parser = argparse.ArgumentParser(description='ravens')
-    # parser.add_argument('--config_file', type=str, required=True, help='the name of configuration file')
-    # arguments = parser.parse_args()
-    config_name = cmd_args.config_file
-
-    with open(os.path.join('configs', config_name), 'r') as file:
-        config_data = yaml.load(file, Loader=yaml.FullLoader)
-    args = edict(config_data)
-
     # Initialize environment and task.
     env = Environment(
         args.assets_root,
@@ -124,54 +119,21 @@ def main():
         torch.set_num_threads(1)
         torch.manual_seed(cmd_args.seed + 1)
         cudnn.benchmark = False
-        cudnn.deterministic = True
-        # Initial Agent
-        #agent = task.oracle(env, steps_per_seg=3)
-        if cmd_args.agent == 'equ':
-            print('Cn equivariant agent')
-            network_params = args.equ
-            agent = equ_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
-                              n_rotations=cmd_args.n_rotations,network_params=network_params,
-                              postfix=cmd_args.postfix)
-        # if args.femi:
-        #     print('femi_agent')
-        #     agent = femi_agent(name=name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        # if args.semi:
-        #     print('semi_agent')
-        #     agent = semi_agent(name=name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite)
-        # if args.non:
-        #     print('no equivariant agent')
-        #     agent = non_equi_agent(name=name,task=cmd_args.task,root_dir=args.data_dir)
-        # if args.tail:
-        #     print('equvairant agent with tail network')
-        #     agent = equ_agent_tail(name=name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        # if args.grconv:
-        #     print('no equivariant grconv agent')
-        #     agent = gr_agent(name=name,task=cmd_args.task,root_dir=args.data_dir)
-        # if args.equ_grconv:
-        #     print('equivariant grconv agent')
-        #     agent = gr_equ_agent(name=name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
-        elif cmd_args.agent == 'so2':
-            print('so(2) equivariant agent')
-            network_params = args.so2
-            agent = so2_equ_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
-                                  n_rotations=cmd_args.n_rotations,network_params=network_params,postfix=cmd_args.postfix)
-        elif cmd_args.agent == 'so2-align':
-            print('so(2)-align equivariant agent')
-            network_params = args.so2
-            network_params['transport']['n_ori_align'] = cmd_args.n_align
-            agent = so2_align_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
-                                  n_rotations=cmd_args.n_rotations,network_params=network_params,postfix=cmd_args.postfix)
-        
+        cudnn.deterministic = True   
+        # load agent
+        # agent = load_agent(cmd_args.agent, name, args)
     
         if cmd_args.entire == True:
-            # n_steps = [20000,15000,10000,8000,5000,2000]
             n_steps = [10000,8000,6000,4000,2000]
         else:
             n_steps = [cmd_args.n_steps] 
         
         for test_step in n_steps:
+            # load agent
+            agent = None
+            agent = load_agent(cmd_args.agent, name, args)
             agent.load(test_step)
+
             results = []
             #print(ds.n_episodes,'============')
             for i in range(ds.n_episodes):
@@ -196,13 +158,7 @@ def main():
                         break
                 results.append((total_reward, info))
     
-                # Save results.
-                # test_dir = '{}{}'.format(cmd_args.agent, cmd_args.postfix)
-                # if not os.path.exists(os.path.join(args.test_dir, test_dir)):
-                #     os.makedirs(os.path.join(args.test_dir, test_dir))
-                # with open(os.path.join(args.test_dir, test_dir, f'{name}-{test_step}.pkl'),'wb') as f:
-                #     pickle.dump(results, f)
-                
+            # Save results.
             model_dir = '{}{}'.format(cmd_args.agent, cmd_args.postfix)
             if not os.path.exists(os.path.join(args.test_dir, name)):
                 os.makedirs(os.path.join(args.test_dir, name))
@@ -210,8 +166,42 @@ def main():
                 os.makedirs(os.path.join(args.test_dir, name, model_dir))
             with open(os.path.join(args.test_dir, name, model_dir, f'{test_step}.pkl'),'wb') as f:
                 pickle.dump(results, f)
+
+            # clear the model
+            agent.clear()
                 
-                
+
+def load_agent(agent_name, task_name):
+    if agent_name == 'equ':
+        print('Cn equivariant agent')
+        network_params = args.equ
+        agent = equ_agent(name=task_name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
+                            n_rotations=cmd_args.n_rotations,network_params=network_params,
+                            postfix=cmd_args.postfix)
+    # if args.femi:
+    #     print('femi_agent')
+    #     agent = femi_agent(name=task_name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+    # if args.semi:
+    #     print('semi_agent')
+    #     agent = semi_agent(name=task_name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite)
+    # if args.non:
+    #     print('no equivariant agent')
+    #     agent = non_equi_agent(name=task_name,task=cmd_args.task,root_dir=args.data_dir)
+    # if args.tail:
+    #     print('equvairant agent with tail network')
+    #     agent = equ_agent_tail(name=task_name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)
+    elif agent_name == 'so2':
+        print('so(2) equivariant agent')
+        network_params = args.so2
+        agent = so2_equ_agent(name=task_name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
+                                n_rotations=cmd_args.n_rotations,network_params=network_params,postfix=cmd_args.postfix)
+    elif agent_name == 'so2-align':
+        print('so(2)-align equivariant agent')
+        network_params = args.so2
+        network_params['transport']['n_ori_align'] = cmd_args.n_align
+        agent = so2_align_agent(name=task_name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
+                                n_rotations=cmd_args.n_rotations,network_params=network_params,postfix=cmd_args.postfix)
+    return agent
 
 if __name__=="__main__":
     main()

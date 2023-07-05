@@ -202,5 +202,8 @@ class Attention:
         torch.save(self.model.state_dict(), filename1)
         self.angle_model.eval()
         torch.save(self.angle_model.state_dict(), filename2)
-
+    
+    def clear(self):
+       self.model = None
+       self.angle_model = None
 

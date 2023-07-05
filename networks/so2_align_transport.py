@@ -235,3 +235,7 @@ class Transport:
         plt.imshow(out_np)
         plt.axis('off')
         plt.show()
+
+    def clear(self):
+        self.model_kernel = None
+        self.model_map = None
