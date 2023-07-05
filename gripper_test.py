@@ -131,7 +131,7 @@ def main():
         for test_step in n_steps:
             # load agent
             agent = None
-            agent = load_agent(cmd_args.agent, name, args)
+            agent = load_agent(cmd_args.agent, name)
             agent.load(test_step)
 
             results = []
