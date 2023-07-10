@@ -6,6 +6,8 @@ from collections import OrderedDict
 from escnn_extension.fourier_gapool import FourierGroupAvgPool
 from escnn_extension.inverse_fourier_transform import IFTPointwist as IFTPointwise
 
+# from scipy import stats
+
 class SO2ResBlock(torch.nn.Module):
     def __init__(self, input_channels, output_channels, kernel_size, N=-1, 
                  irreps=[(f,) for f in range(4)], num_of_samples=16, flip=False, quotient=False, initialize=True, last_act = True):
@@ -256,7 +258,7 @@ class so2_res(torch.nn.Module):
         self.invariant_map = nn.SequentialModule(ftgpool)
 
         self.fcn = torch.nn.Sequential(
-            torch.nn.Conv2d(ftgpool.out_type.size, middle_dim[0], kernel_size=3, stride=1,padding=1),
+            torch.nn.Conv2d(ftgpool.out_type.size, middle_dim[0], kernel_size=3, stride=1, padding=1),
             torch.nn.ELU(inplace=True),
             torch.nn.Conv2d(middle_dim[0], out_dim, kernel_size=1, stride=1, padding=0),
         )
@@ -296,8 +298,18 @@ class so2_res(torch.nn.Module):
             if isinstance(module, nn.R2Conv):
                 if init:
                     # print(name)
-                    #nn.init.generalized_he_init(module.weights.data, module.basisexpansion)
-                    nn.init.deltaorthonormal_init(module.weights.data, module.basisexpansion)
+                    nn.init.generalized_he_init(module.weights.data, module.basisexpansion)
+                    # nn.init.deltaorthonormal_init(module.weights.data, module.basisexpansion)
+                else:
+                    pass
+            elif isinstance(module, torch.nn.Conv2d): # init the last two CNN layers
+                if init:
+                    # print(name)
+                    # m, n, o, i = module.weight.shape
+                    # module.weight.data[:] = torch.tensor(stats.ortho_group.rvs(max(m,n,o,i))[:m, :n, :o, :i])
+                    torch.nn.init.kaiming_uniform_(module.weight)
+                    if module.bias is not None:
+                        module.bias.data.zero_()
                 else:
                     pass
     
