@@ -34,6 +34,7 @@ parser.add_argument('--n_rotations', type=int, default=36)
 parser.add_argument('--agent', type=str, default='so2-align')
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--n_align', type=int, default=12)
+parser.add_argument('--n_feat', type=int, default=1)
 parser.add_argument('--n_steps', type=int,default=10000) # the total train step n_steps/intervel = epoch
 parser.add_argument('--interval', type=int,default=1000) # the training step for one epoch interval/n_demos = the number of resued data
 # parser.add_argument('--n_runs', type=int,default=1)# not important
@@ -139,16 +140,16 @@ def main():
             print('so(2)-align equivariant agent')
             network_params = args.so2
             network_params['transport']['n_ori_align'] = cmd_args.n_align
+            network_params['transport']['n_dim_per_ori'] = cmd_args.n_feat
             agent = so2_align_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
                                   n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
                                   init=args.init,postfix=cmd_args.postfix)
         else:
             raise Exception('Invalid model type')
-        while agent.total_steps<cmd_args.n_steps:
-            # interval = cmd_args.interval if agent.total_steps <=10000 else 5000 
-            for _ in range(cmd_args.interval):
-                agent.train(train_dataset,writer)
-            agent.save()
+        while agent.total_steps<cmd_args.n_steps:            
+            agent.train(train_dataset,writer)
+            if agent.total_steps % cmd_args.interval == 0:
+                agent.save()
         
         # clear the model
         agent.clear()

@@ -45,6 +45,7 @@ parser.add_argument('--n_rotations', type=int, default=36)
 parser.add_argument('--agent', type=str, default='so2-align')
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--n_align', type=int, default=12)
+parser.add_argument('--n_feat', type=int, default=1)
 parser.add_argument('--n_steps', type=int,default=10000)# the testing steps
 
 # parser.add_argument('--n_runs', type=int,default=1)
@@ -199,6 +200,7 @@ def load_agent(agent_name, task_name):
         print('so(2)-align equivariant agent')
         network_params = args.so2
         network_params['transport']['n_ori_align'] = cmd_args.n_align
+        network_params['transport']['n_dim_per_ori'] = cmd_args.n_feat
         agent = so2_align_agent(name=task_name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
                                 n_rotations=cmd_args.n_rotations,network_params=network_params,postfix=cmd_args.postfix)
     return agent

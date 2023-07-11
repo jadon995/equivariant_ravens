@@ -42,7 +42,7 @@ class Transport:
                         'sample': network_params['transport']['sample']}
         
         self.n_ori_align = network_params['transport']['n_ori_align'] 
-        self.n_dim_per_ori = 1
+        self.n_dim_per_ori = network_params['transport']['n_dim_per_ori']
         assert self.n_rotations % self.n_ori_align == 0, "Must be divided with no remain"
 
         # Padding the image to get same size output after the cross-relation
