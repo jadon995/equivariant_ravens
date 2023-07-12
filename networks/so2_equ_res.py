@@ -190,7 +190,7 @@ class SO2ResUnet(torch.nn.Module):
         return self.forwardDecoder(feature_map_1, feature_map_2, feature_map_4, feature_map_8, feature_map_16)
     
 class so2_res(torch.nn.Module):
-    def __init__(self,in_dim,out_dim,middle_dim=(32, 64, 128, 256),init=False, **irrep_kwargs):
+    def __init__(self,in_dim,out_dim,middle_dim=(32, 64, 128, 256),init=False, init_method='he', **irrep_kwargs):
         super(so2_res, self).__init__()
 
         max_irrep = irrep_kwargs['irrep']
@@ -298,8 +298,12 @@ class so2_res(torch.nn.Module):
             if isinstance(module, nn.R2Conv):
                 if init:
                     # print(name)
-                    nn.init.generalized_he_init(module.weights.data, module.basisexpansion)
-                    # nn.init.deltaorthonormal_init(module.weights.data, module.basisexpansion)
+                    if init_method == 'he': # for pick-position network
+                        nn.init.generalized_he_init(module.weights.data, module.basisexpansion)
+                    elif init_method == 'deltaorthonormal': # for so2 transport network
+                        nn.init.deltaorthonormal_init(module.weights.data, module.basisexpansion)
+                    else:
+                        raise Exception(f"Invalid weight-initialization method is obtained: {init_method}")
                 else:
                     pass
             elif isinstance(module, torch.nn.Conv2d): # init the last two CNN layers
@@ -307,9 +311,12 @@ class so2_res(torch.nn.Module):
                     # print(name)
                     # m, n, o, i = module.weight.shape
                     # module.weight.data[:] = torch.tensor(stats.ortho_group.rvs(max(m,n,o,i))[:m, :n, :o, :i])
-                    torch.nn.init.kaiming_uniform_(module.weight)
-                    if module.bias is not None:
-                        module.bias.data.zero_()
+                    if init_method == 'he':
+                        torch.nn.init.kaiming_uniform_(module.weight)
+                        if module.bias is not None:
+                            module.bias.data.zero_()
+                    else:
+                        pass
                 else:
                     pass
     

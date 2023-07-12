@@ -50,10 +50,10 @@ class Attention:
         
         if network_params['position']['lite']:
           self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(16, 32, 64, 128),
-                               init=init,**irrep_kwargs).to(self.device)
+                               init=init, init_method='he', **irrep_kwargs).to(self.device)
         else:
           self.model = so2_res(in_dim=6,out_dim=1,middle_dim=(32, 64, 128, 256),
-                               init=init,**irrep_kwargs).to(self.device)
+                               init=init, init_method='he', **irrep_kwargs).to(self.device)
         if network_params['angle']['lite']:
           # self.angle_model = lite_pick_angle(init=init).to(self.device)
           self.angle_model = so2_pick_angle(init=init,N=n_rotations,**angle_irrep_kwargs).to(self.device) 
