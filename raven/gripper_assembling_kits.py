@@ -483,7 +483,7 @@ class AssemblingKits3DToolKit(Task):
         utils.COLORS['purple'], utils.COLORS['blue'], utils.COLORS['green'],
         utils.COLORS['yellow'], utils.COLORS['red']
     ]
-    random.shuffle(colors)
+    np.random.shuffle(colors)
     symmetry = [
         2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 
         2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi,
