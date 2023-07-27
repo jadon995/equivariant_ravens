@@ -4,10 +4,10 @@ file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
 import numpy as np
 import torch
-import e2cnn
-from e2cnn import gspaces
+# import e2cnn
+# from e2cnn import gspaces
 import torch.nn.functional as F
-import e2cnn.nn as enn
+# import e2cnn.nn as enn
 import kornia as K
 import torchvision
 from matplotlib import pyplot as plt
@@ -48,8 +48,8 @@ class Transport:
         if not hasattr(self, 'kernel_dim'):
             self.kernel_dim = 3
 
-        self.gspace = gspaces.Rot2dOnR2(6)
-        self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
+        # self.gspace = gspaces.Rot2dOnR2(6)
+        # self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
         #self.model_map = Wide_ResNet(16, 4, 0.2, initial_stride=1, N=6, f=False, r=0, num_classes=3).to(self.device)
         #self.model_kernel = Wide_ResNet(16, 4, 0.2, initial_stride=1, N=6, f=False, r=0, num_classes=3).to(self.device)
         if lite:

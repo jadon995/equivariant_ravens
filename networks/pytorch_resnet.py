@@ -2,9 +2,9 @@ from typing import Tuple
 import torch
 import torch.nn.functional as F
 import math
-import e2cnn.nn as enn
-from e2cnn.nn import init
-from e2cnn import gspaces
+# import e2cnn.nn as enn
+# from e2cnn.nn import init
+# from e2cnn import gspaces
 
 from argparse import ArgumentParser
 

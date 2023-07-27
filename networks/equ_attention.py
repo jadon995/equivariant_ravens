@@ -4,10 +4,10 @@ file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
 import numpy as np
 import torch
-import e2cnn
-from e2cnn import gspaces
+# import e2cnn
+# from e2cnn import gspaces
 import torch.nn.functional as F
-import e2cnn.nn as enn
+# import e2cnn.nn as enn
 from equ_res_3 import dian_res
 from pick_angle_model import EquRes as lite_pick_angle
 from pick_angle_model_2 import EquRes as pick_angle
@@ -29,8 +29,8 @@ class Attention:
         in_shape = np.array(in_shape)
         in_shape += np.sum(self.padding, axis=1)
         in_shape = tuple(in_shape)
-        self.gspace = gspaces.Rot2dOnR2(4)
-        self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
+        # self.gspace = gspaces.Rot2dOnR2(4)
+        # self.in_type = enn.FieldType(self.gspace, [self.gspace.trivial_repr] * in_shape[-1])
 
         self.pos_label_type = network_params['position']['label_type']
         self.pos_label_radius = network_params['position']['label_radius']

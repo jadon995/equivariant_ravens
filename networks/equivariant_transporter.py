@@ -7,10 +7,10 @@ import time
 import numpy as np
 import os
 import torch
-import e2cnn
-from e2cnn import gspaces
+# import e2cnn
+# from e2cnn import gspaces
 import torch.nn.functional as F
-import e2cnn.nn as enn
+# import e2cnn.nn as enn
 
 from equ_transport import Transport
 from equ_attention import Attention

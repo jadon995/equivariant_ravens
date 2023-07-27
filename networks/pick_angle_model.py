@@ -1,6 +1,8 @@
 import torch
-from e2cnn import gspaces
-import e2cnn.nn as nn
+# from e2cnn import gspaces
+# import e2cnn.nn as nn
+from escnn import gspaces
+import escnn.nn as nn
 import torch.nn.functional as F
 from collections import OrderedDict
 
@@ -10,9 +12,9 @@ class EquiResBlock(torch.nn.Module):
         super(EquiResBlock, self).__init__()
 
         if flip:
-            r2_act = gspaces.FlipRot2dOnR2(N=N)
+            r2_act = gspaces.flipRot2dOnR2(N=N)
         else:
-            r2_act = gspaces.Rot2dOnR2(N=N)
+            r2_act = gspaces.rot2dOnR2(N=N)
 
         if quotient:
             if flip:
@@ -64,9 +66,9 @@ class EquRes(torch.nn.Module):
         self.N = N
         self.quotient = quotient
         if flip:
-            self.r2_act = gspaces.FlipRot2dOnR2(N=N)
+            self.r2_act = gspaces.flipRot2dOnR2(N=N)
         else:
-            self.r2_act = gspaces.Rot2dOnR2(N=N)
+            self.r2_act = gspaces.rot2dOnR2(N=N)
 
         if quotient:
             if flip:

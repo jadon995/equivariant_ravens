@@ -5,10 +5,10 @@ sys.path.append(file_dir)
 
 import numpy as np
 import torch
-import e2cnn
-from e2cnn import gspaces
+# import e2cnn
+# from e2cnn import gspaces
 import torch.nn.functional as F
-import e2cnn.nn as enn
+# import e2cnn.nn as enn
 import kornia as K
 import torchvision
 from matplotlib import pyplot as plt

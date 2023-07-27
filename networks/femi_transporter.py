@@ -8,10 +8,10 @@ import numpy as np
 import os
 #from pytorch_attention import Attention
 import torch
-import e2cnn
-from e2cnn import gspaces
+# import e2cnn
+# from e2cnn import gspaces
 import torch.nn.functional as F
-import e2cnn.nn as enn
+# import e2cnn.nn as enn
 from raven import cameras
 from raven import utils
 import tensorflow as tf
