@@ -139,6 +139,7 @@ class PickPlace():
         # a small increase for the gripper width
         ee.move(ee.read()+0.005)
         time.sleep(0.1)
-        # ee.move_tcp_xyz(postplace_pose,eef_step=eef_step,vel=vel)
+        if task_name != 'assembling-kits': # to accelerate assembling tests
+            ee.move_tcp_xyz(postplace_pose,eef_step=eef_step,vel=vel)
         self.remove(ee)
         return False

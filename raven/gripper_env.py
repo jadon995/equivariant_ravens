@@ -235,9 +235,10 @@ class Environment(gym.Env):
       p.stepSimulation()
     
     # wait for extra time for objects settling
-    t0 = time.time()
-    while (time.time() - t0) < extend_secs:
-      p.stepSimulation()
+    if self.task_env_name == 'assembling-kits':
+      t0 = time.time()
+      while (time.time() - t0) < extend_secs:
+        p.stepSimulation()
 
     # Get task rewards.
     reward, info = self.task.reward() if action is not None else (0, {})

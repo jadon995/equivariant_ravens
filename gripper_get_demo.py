@@ -35,7 +35,7 @@ def main():
     env = enc_cls(args.assets_root,
                   disp=args.disp,
                   shared_memory=False,
-                  hz=1000)
+                  hz=480)
     if args.task == 'block-insertion':
         task = BlockInsertion(continuous=args.continuous)
     elif args.task == 'place-red-in-green':
