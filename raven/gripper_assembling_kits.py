@@ -27,7 +27,7 @@ import utils
 import random
 import matplotlib.pyplot as plt
 
-import open3d as o3d
+import trimesh
 
 file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
@@ -562,7 +562,7 @@ class AssemblingKits3DToolKit(Task):
       os.remove(urdf)
 
       # load meshes
-      mesh = o3d.io.read_triangle_mesh(str(fname_coll))
+      mesh = trimesh.load_mesh(str(fname_coll))
       mesh = np.asarray(mesh.vertices)
 
       # grasp keypoint
