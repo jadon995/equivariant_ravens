@@ -29,12 +29,15 @@ It is worth noting that our proposed method, Equivariant Transporter Network can
 
 **Step 2.** Install Pytorch (Test on Pytorch 1.8.1 and Cuda 10.2)
 ```commandline
-conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
+conda install pytorch==1.8.1 torchvision==0.9.1 torchaudio==0.8.1 cudatoolkit=10.2 -c pytorch
 ```
 **Step 3.** Install the required packages
 
 ```shell
 pip install -r ./requirements.txt
+pip install kornia
+pip install easydict
+pip install escnn
 ```
 (friendly note: It's a little awkward to install tensorflow that is not used for training. A tensorflow without cuda is ok since the model is trained with pytorch. Latter update will remove tensorflow and provied a pure-pytorch version that also enable batch training.)
 
