@@ -131,11 +131,18 @@ class Attention:
         if theta >= np.pi:
           theta = theta -np.pi
         # angle label
-        # dgree interval: 10 
-        # theta_i = theta / (2 * np.pi / self.n_rotations)
+        # dgree interval: 10
+        theta_i = theta / (2 * np.pi / self.n_rotations)
         # theta_i is in range [0,17]
-        # theta_i = np.int32(np.round(theta_i)) % (self.n_rotations/2)
-        # label_theta = torch.as_tensor(theta_i,dtype=torch.long,device=self.device).unsqueeze(dim=0)
+        theta_i = np.int32(np.round(theta_i)) % (self.n_rotations//2)
+        label_theta = torch.as_tensor(theta_i,dtype=torch.long,device=self.device).unsqueeze(dim=0)
+        # location label
+        label_size = (1,) + in_img.shape[:2]  #(1, 320, 160)
+        label = torch.zeros(label_size,dtype=torch.long,device=self.device)
+        label[0, p[0], p[1],] = 1
+        label = label.reshape(-1)
+        label = torch.argmax(label).unsqueeze(dim=0)
+        '''
         if self.angle_label_type == 2:
           theta_i = theta / (2 * np.pi / self.n_rotations)
           theta_i = np.int32(np.round(theta_i) % (self.n_rotations/2))
@@ -170,11 +177,12 @@ class Attention:
                                         sigma=self.pos_label_sigma, 
                                         normalized=True, device=self.device)
           label = label.reshape(1,-1)
+        '''
         # print('label size',label.shape)
         # print('out size', output.shape)
         # Get loss
-        loss1 = F.cross_entropy(input=output, target=label)
-        loss2 = F.cross_entropy(input=angle_index,target=label_theta)
+        loss1 = F.cross_entropy(input=output, target=label,label_smoothing=self.pos_label_smooth)
+        loss2 = F.cross_entropy(input=angle_index,target=label_theta,label_smoothing=self.angle_label_smooth)
         # print(angle_index.shape, label_theta.shape)
 
         # Backpropagation

@@ -184,6 +184,11 @@ class Transport:
         itheta = np.int32(np.round(itheta)) % self.n_rotations
         # Get one-hot pixel label map.
         label_size = (self.n_rotations,) + in_img.shape[:2]
+        label = torch.zeros(label_size, dtype=torch.long, device=self.device)
+        label[itheta, q[0], q[1],] = 1
+        label = label.reshape(1, -1)
+        label = torch.argmax(label).unsqueeze(dim=0)
+        '''
         if self.label_type == 2: # pulse/one-hot label
             label = torch.zeros(label_size, dtype=torch.long, device=self.device)
             label[itheta, q[0], q[1],] = 1
@@ -197,10 +202,11 @@ class Transport:
                                           radius=self.label_radius, sigma=self.label_sigma,
                                           device=self.device)
             label = label.reshape(1,-1)
+        '''
         # print(output.shape)
         # print(label.shape)
         # Get loss
-        loss = F.cross_entropy(input=output, target=label)
+        loss = F.cross_entropy(input=output, target=label, label_smoothing=self.label_smooth)
 
         if backprop:
             self.optim.zero_grad()
