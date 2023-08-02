@@ -38,6 +38,7 @@ pip install -r ./requirements.txt
 pip install kornia
 pip install easydict
 pip install escnn
+pip install trimesh
 ```
 (friendly note: It's a little awkward to install tensorflow that is not used for training. A tensorflow without cuda is ok since the model is trained with pytorch. Latter update will remove tensorflow and provied a pure-pytorch version that also enable batch training.)
 
