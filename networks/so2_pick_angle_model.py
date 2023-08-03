@@ -68,7 +68,7 @@ class SO2ResNet(torch.nn.Module):
     def __init__(self, 
                  n_input_channel=6,
                  n_output_channel=1,
-                 n_middle_channels=(16, 32, 16, 8, 4),
+                 n_middle_channels=(18, 36, 18, 8, 4),
                  kernel_size=7,
                  N=36, 
                  flip=False,
