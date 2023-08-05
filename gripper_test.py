@@ -149,7 +149,7 @@ def main():
                 info = None
                 reward = 0
                 for k in range(task.max_steps):
-                    extend_secs = 0 if k<task.max_steps-1 else 5
+                    extend_secs = 0 if k<task.max_steps-1 else 2
                     act = agent.act(obs, info, goal)
                     #act = agent.act(obs, info)
                     obs, reward, done, info = env.step(act, extend_secs=extend_secs)
