@@ -91,7 +91,7 @@ def main():
         reward = 0
         for i in range(max_steps):
             # wait more time for objects to settle down
-            extend_secs = 0 if i<max_steps-1 else 2
+            extend_secs = 0 if i<max_steps-1 else 5
 
             act = agent.act(obs, info)
             # print('obs 0', obs['color'][0].shape, obs['color'][1].shape, obs['color'][2].shape)
