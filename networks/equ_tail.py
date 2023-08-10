@@ -1,8 +1,8 @@
 import torch
-# from e2cnn import gspaces
-from escnn import gspaces
-# import e2cnn.nn as nn
-import escnn.nn as nn
+from e2cnn import gspaces
+# from escnn import gspaces
+import e2cnn.nn as nn
+# import escnn.nn as nn
 import torch.nn.functional as F
 from collections import OrderedDict
 
@@ -12,9 +12,9 @@ class EquiResBlock(torch.nn.Module):
         super(EquiResBlock, self).__init__()
 
         if flip:
-            r2_act = gspaces.flipRot2dOnR2(N=N)
+            r2_act = gspaces.FlipRot2dOnR2(N=N)
         else:
-            r2_act = gspaces.rot2dOnR2(N=N)
+            r2_act = gspaces.Rot2dOnR2(N=N)
 
         if quotient:
             if flip:
@@ -61,9 +61,9 @@ class EquResUNet(torch.nn.Module):
         self.N = N
         self.quotient = quotient
         if flip:
-            self.r2_act = gspaces.flipRot2dOnR2(N=N)
+            self.r2_act = gspaces.FlipRot2dOnR2(N=N)
         else:
-            self.r2_act = gspaces.rot2dOnR2(N=N)
+            self.r2_act = gspaces.Rot2dOnR2(N=N)
 
         if quotient:
             if flip:
@@ -156,7 +156,7 @@ class EquResUNet(torch.nn.Module):
 class Tail(torch.nn.Module):
     def __init__(self,in_dim, out_dim, N=6, middle_dim=(8, 16, 32,),init=False):
         super(Tail, self).__init__()
-        self.r2_act = gspaces.rot2dOnR2(N=N)
+        self.r2_act = gspaces.Rot2dOnR2(N=N)
         self.main_block = EquResUNet(n_input_channel=in_dim,n_output_channel=middle_dim[0],n_middle_channels=middle_dim,N=N)
         self.final = torch.nn.Sequential(
             nn.R2Conv(nn.FieldType(self.r2_act, [self.r2_act.regular_repr]*middle_dim[0]),
