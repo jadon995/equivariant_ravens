@@ -29,7 +29,8 @@ It is worth noting that our proposed method, Equivariant Transporter Network can
 
 **Step 2.** Install Pytorch (Test on Pytorch 1.8.1 and Cuda 10.2)
 ```commandline
-conda install pytorch==1.8.1 torchvision==0.9.1 torchaudio==0.8.1 cudatoolkit=10.2 -c pytorch
+# conda install pytorch==1.8.1 torchvision==0.9.1 torchaudio==0.8.1 cudatoolkit=10.2 -c pytorch
+conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.6 -c pytorch -c nvidia
 ```
 **Step 3.** Install the required packages
 
