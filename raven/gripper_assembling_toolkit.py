@@ -53,10 +53,10 @@ class AssemblingToolKit(Task):
     super().reset(env)
 
     colors = [
-        utils.COLORS['purple'], utils.COLORS['blue'], utils.COLORS['green'],
+        utils.COLORS['blue'], utils.COLORS['green'],
         utils.COLORS['yellow'], utils.COLORS['red']
     ]
-    np.random.shuffle(colors)
+    # np.random.shuffle(colors)
     symmetry = [
         2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 
         2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi, 2 * np.pi,
