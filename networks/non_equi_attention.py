@@ -54,7 +54,7 @@ class Attention:
         pivot = torch.as_tensor([in_data.shape[-2]/2,in_data.shape[-1]/2])
         pivot =pivot.to(self.device).repeat(self.n_rotations//2,1).to(torch.float32)
         in_data = in_data.repeat(self.n_rotations//2,1,1,1)
-        in_data = K.geometry.rotate(in_data,torch.from_numpy(-np.linspace(0., 360., self.n_rotations, endpoint=False, dtype=np.float32))[0:18].to(self.device), mode='nearest',center=pivot)
+        in_data = K.geometry.rotate(in_data,torch.from_numpy(-np.linspace(0., 360., self.n_rotations, endpoint=False, dtype=np.float32))[0:self.n_rotations//2].to(self.device), mode='nearest',center=pivot)
         #print('indata rotate 36/2',in_data.shape)
         #self.imshow(in_data,size=(36,12),name='rotation')
 
@@ -68,7 +68,7 @@ class Attention:
         #print('logits',logits.shape)
         # rotate back
         logits = K.geometry.rotate(logits,torch.from_numpy(np.linspace(0., 360., self.n_rotations,
-                                                                    endpoint=False,dtype=np.float32))[0:18].to(self.device),
+                                                                    endpoint=False,dtype=np.float32))[0:self.n_rotations//2].to(self.device),
                                  mode='nearest',center=pivot)
                                  
 
@@ -104,9 +104,9 @@ class Attention:
           theta = theta -np.pi
         # angle label
         # dgree interval: 10
-        theta_i = theta / (2 * np.pi / 36)
+        theta_i = theta / (2 * np.pi / self.n_rotations)
         # theta_i is in range [0,17]
-        theta_i = np.int32(np.round(theta_i)) % 18
+        theta_i = np.int32(np.round(theta_i)) % (self.n_rotations//2)
         label_theta = torch.as_tensor(theta_i, dtype=torch.long, device=self.device).unsqueeze(dim=0)
         label_size = (self.n_rotations//2,) + in_img.shape[:2]
         label = torch.zeros(label_size,dtype=torch.long,device=self.device)

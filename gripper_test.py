@@ -22,7 +22,7 @@ from raven.gripper_assembling_kits import AssemblingKits, AssemblingKitsTool, As
 from raven.gripper_assembling_toolkit import AssemblingToolKit
 
 from networks.equivariant_transporter import TransporterAgent as equ_agent
-# from networks.non_equi_transporter import TransporterAgent as non_equi_agent
+from networks.non_equi_transporter import TransporterAgent as non_equi_agent
 # from networks.femi_transporter import TransporterAgent as femi_agent
 # from networks.semi_transporter import TransporterAgent as semi_agent
 # from networks.equivariant_transporter_tail import TransporterAgent as equ_agent_tail
@@ -185,9 +185,11 @@ def load_agent(agent_name, task_name):
     # if args.semi:
     #     print('semi_agent')
     #     agent = semi_agent(name=task_name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite)
-    # if args.non:
+    elif agent_name == 'non':
     #     print('no equivariant agent')
-    #     agent = non_equi_agent(name=task_name,task=cmd_args.task,root_dir=args.data_dir)
+        # agent = non_equi_agent(name=task_name,task=cmd_args.task,root_dir=args.data_dir)
+        agent = non_equi_agent(name=task_name,task=cmd_args.task,root_dir=args.checkpoint_dir, device=cmd_args.gpu_id,
+                                   n_rotations=cmd_args.n_rotations,postfix=cmd_args.postfix)
     # if args.tail:
     #     print('equvairant agent with tail network')
     #     agent = equ_agent_tail(name=task_name,task=cmd_args.task,root_dir=args.data_dir,lite=args.lite, angle_lite = args.angle_lite)

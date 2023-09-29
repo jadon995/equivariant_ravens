@@ -19,7 +19,8 @@ from non_equi_attention import Attention
 class TransporterAgent:
     """Agent that uses Transporter Networks."""
 
-    def __init__(self, name, task, root_dir, device=1, n_rotations=36, load=False):
+    def __init__(self, name, task, root_dir, device=1, n_rotations=36, load=False,
+                 init=False, postfix=''):
         self.name = name
         self.task = task
         self.total_steps = 0
@@ -28,13 +29,13 @@ class TransporterAgent:
         self.pix_size = 0.003125
         self.in_shape = (320, 160, 6)
         self.cam_config = cameras.RealSenseD415.CONFIG
-        self.models_dir = os.path.join(root_dir, 'checkpoints_non_equi', self.name)
+        self.models_dir = os.path.join(root_dir, self.name, 'non'+postfix)
         self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
 
-        if device == 1:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        else:
+        if device == -1:
             device = torch.device('cpu')
+        else:
+            device = torch.device("cuda:{}".format(device) if torch.cuda.is_available() else "cpu")
 
         self.device = device
 
@@ -199,7 +200,11 @@ class TransporterAgent:
         p1_xyz = utils.pix_to_xyz(p1_pix, hmap, self.bounds, self.pix_size)
         # Todo change z value for block-insertion
         p0_xyz = list(p0_xyz)
-        p0_xyz[2] = 0.03 + 0.04  # cube is 0.08X0.03 X 0.04
+        if self.task == 'assembling-kits-3dtoolkit' or \
+            self.task == 'assembling-single-toolkit':
+            p0_xyz[2] = 0.03 + 0.03
+        else:
+            p0_xyz[2] = 0.03 + 0.04  # cube is 0.08X0.03 X 0.04
         p0_xyz = tuple(p0_xyz)
         p1_xyz = list(p1_xyz)
         p1_xyz[2] = 0.03 + 0.04  # cube is 0.08X0.03 X 0.04

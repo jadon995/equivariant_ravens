@@ -12,7 +12,7 @@ import tensorflow as tf
 import torch
 import torch.backends.cudnn as cudnn
 
-# from networks.non_equi_transporter import TransporterAgent as non_equi_agent
+from networks.non_equi_transporter import TransporterAgent as non_equi_agent
 # from networks.femi_transporter import TransporterAgent as femi_agent
 # from networks.semi_transporter import TransporterAgent as semi_agent
 # from networks.equivariant_transporter_tail import TransporterAgent as equ_agent_tail
@@ -104,6 +104,7 @@ def main():
         episodes = np.random.choice(range(max_demos), cmd_args.n_demos, False)
         train_dataset.set(episodes)
         print('use {} demos and train {} steps per epoch'.format(cmd_args.n_demos,cmd_args.interval))
+        print('Sample index: ', episodes)
         # train agent and save snapshot
         if cmd_args.agent == 'equ':
             print('equvairant agent')
@@ -144,6 +145,13 @@ def main():
             agent = so2_align_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
                                   n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
                                   init=args.init,postfix=cmd_args.postfix)
+        elif cmd_args.agent == 'non':
+            print('non equivariant agent')
+            # agent = non_equi_agent(name=name,task=cmd_args.task,root_dir=args.data_dir,load=args.load)
+            agent = non_equi_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir, device=cmd_args.gpu_id,
+                                   n_rotations=cmd_args.n_rotations,load=args.load,
+                                   init=args.init,postfix=cmd_args.postfix)
+            
         else:
             raise Exception('Invalid model type')
         while agent.total_steps<cmd_args.n_steps:            
