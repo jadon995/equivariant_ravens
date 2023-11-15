@@ -30,6 +30,7 @@ from networks.non_equi_transporter import TransporterAgent as non_equi_agent
 # from networks.gr_equi_transporter import TransporterAgent as gr_equ_agent
 from networks.so2_equivariant_transporter import TransporterAgent as so2_equ_agent
 from networks.so2_align_transporter import TransporterAgent as so2_align_agent
+from networks.mix_equ_transporter import TransporterAgent as mix_equ_agent
 
 import faulthandler; faulthandler.enable()
 
@@ -204,6 +205,11 @@ def load_agent(agent_name, task_name):
         network_params['transport']['n_ori_align'] = cmd_args.n_align
         network_params['transport']['n_dim_per_ori'] = cmd_args.n_feat
         agent = so2_align_agent(name=task_name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
+                                n_rotations=cmd_args.n_rotations,network_params=network_params,postfix=cmd_args.postfix)
+    elif agent_name == 'mix':
+        print('so(2)-align equivariant agent')
+        network_params = args.mix
+        agent = mix_equ_agent(name=task_name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
                                 n_rotations=cmd_args.n_rotations,network_params=network_params,postfix=cmd_args.postfix)
     return agent
 

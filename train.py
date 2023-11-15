@@ -21,6 +21,7 @@ from networks.equivariant_transporter import TransporterAgent as equ_agent
 # from networks.gr_equi_transporter import TransporterAgent as gr_equ_agent
 from networks.so2_equivariant_transporter import TransporterAgent as so2_equ_agent
 from networks.so2_align_transporter import TransporterAgent as so2_align_agent
+from networks.mix_equ_transporter import TransporterAgent as mix_equ_agent
 
 # import faulthandler; faulthandler.enable()
 
@@ -151,6 +152,12 @@ def main():
             agent = non_equi_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir, device=cmd_args.gpu_id,
                                    n_rotations=cmd_args.n_rotations,load=args.load,
                                    init=args.init,postfix=cmd_args.postfix)
+        elif cmd_args.agent == 'mix':
+            print('mix equivariant agent')
+            network_params = args.mix
+            agent = mix_equ_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
+                                  n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
+                                  init=args.init,postfix=cmd_args.postfix)
             
         else:
             raise Exception('Invalid model type')
