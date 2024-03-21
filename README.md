@@ -1,33 +1,31 @@
-# Equivariant-Transporter-Net
-[Project Website](https://haojhuang.github.io/etp_page/)&nbsp;&nbsp;•&nbsp;&nbsp;[PDF](https://arxiv.org/abs/2202.09400)&nbsp;&nbsp;•&nbsp;&nbsp; **RSS 2022**
+# Discretizing SO(2)-Equivariant Features for Robotic Kitting
+[PDF](https://arxiv.org/ftp/arxiv/papers/2403/2403.13336.pdf)&nbsp;&nbsp;•&nbsp;&nbsp; **RSS 2022**
 
-*Haojie Huang, Dian Wang, Robin Walters, Robert Platt*
+*Jiadong Zhou, Yadan Zeng, Huixu Dong, I-Ming Chen*
 
-**Abstract.** [Transporter Net](https://arxiv.org/pdf/2010.14406.pdf) is a recently proposed framework for pick and place that is able to learn good manipulation policies from a very few expert demonstrations. A key reason why Transporter Net is so sample efficient is that the model incorporates rotational equivariance into the pick module, i.e. the model immediately generalizes learned pick knowledge to objects presented in different orientations. This paper proposes a novel version of Transporter Net that is equivariant to both pick and place orientation. As a result, our model immediately generalizes place knowledge to different place orientations in addition to generalizing pick knowledge as before. Ultimately, our new model is more sample efficient and achieves better pick and place success rates than the baseline Transporter Net model.
+**Abstract.** Robotic kitting has attracted considerable attention in logistics and industrial settings. However, existing kitting methods encounter challenges such as low precision and poor efficiency, limiting their widespread applications. To address these issues, we present a novel kitting framework that improves both the precision and computational efficiency of complex kitting tasks. Firstly, our approach introduces a fine-grained orientation estimation technique in the picking module, significantly enhancing orientation precision while effectively decoupling computational load from orientation granularity. This approach combines an SO(2)-equivariant network with a group discretization operation to preciously predict discrete orientation distributions. Secondly, we develop the Hand-tool Kitting Dataset (HKD) to evaluate the performance of different solutions in handling orientation-sensitive kitting tasks. This dataset comprises a diverse collection of hand tools and synthetically created kits, which reflects the complexities encountered in real-world kitting scenarios. Finally, a series of experiments are conducted to evaluate the performance of the proposed method. The results demonstrate that our approach offers remarkable precision and enhanced computational efficiency in robotic kitting tasks.
 
-## Panda-gripper Simulation Environment for Pick and Place
+## Hand-tool Kitting Tasks
 
-The experiment part of our paper is based on [Ravens](https://github.com/google-research/ravens), a simulation environment in PyBullet for 2D robotic manipulation with emphasis on pick and place. Since Ravens uses suction gripper that doesn't require pick angle inference, we select five tasks described below and provide a **Panda-Gripper version simulated Environment**. 
-It inherits the Gym-like API from Ravens, each with (i) a scripted oracle that provides expert demonstrations and (ii) reward functions that provide partial credit.
+The kitting simulation is developed based on [Ravens](https://github.com/google-research/ravens) and its [variations](https://github.com/HaojHuang/Equivariant-Transporter-Net), a simulation environment in PyBullet for planar manipulation with emphasis on pick and place. We create a Hand-tool Kitting Dataset (HKD), which focus on the kitting tasks with high orientation sensitivity. It inherits the Gym-like API from Ravens, each with (i) a scripted oracle that provides expert demonstrations and (ii) reward functions that provide partial credit.
 
-<img src="image/gripper.png"><br>
+[Important] For the dataset, please request access and download from the [website](./todo). Please move the dataset to [raven/assets/](./raven/assets/) for running the tasks.
+
+<img src="image/Manipulation_Sequence.png"><br>
 
 (a) **block-insertion**: pick up the L-shaped red block and place it into the L-shaped fixture.<br>
 (b) **place-red-in-green**: pick up the red blocks and place them into the green bowls amidst other objects.<br>
 (c) **align-box-corner**: pick vup the randomly sized box and align one of its corners to the L-shaped marker on the tabletop.<br>
 (d) **stack-block-pyramid**: sequentially stack 6 blocks into a pyramid of 3-2-1 with rainbow colored ordering.<br>
 (e) **palletizing-boxes**: pick up homogeneous fixed-sized boxes and stack them in transposed layers on the pallet.<br>
-
-
-## Highlight
-
-It is worth noting that our proposed method, Equivariant Transporter Network can achieve more sample efficiency and faster converge speed. Taking the block-insertion task for example, it can hit ~100% success rate when trained with 1 expert demonstration for 200 SGD steps (less than 2 minutes). More results could be found in our paper.
+(f) **assembling-single-toolkit** pick up a seen set of hand tools and place them into desinaated cavities within the kits. <br>
+(g) **assembling-kits-3dtoolkit** pick up unseen toolsets and place them into designated cavities within the kits. <br>
 
 ## Installation
 
 **Step 1.** Recommended: install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) with Python 3.7.
 
-**Step 2.** Install Pytorch (Test on Pytorch 1.8.1 and Cuda 10.2)
+**Step 2.** Install Pytorch
 ```commandline
 # conda install pytorch==1.8.1 torchvision==0.9.1 torchaudio==0.8.1 cudatoolkit=10.2 -c pytorch
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.6 -c pytorch -c nvidia
@@ -41,7 +39,6 @@ pip install easydict
 pip install escnn
 pip install trimesh
 ```
-(friendly note: It's a little awkward to install tensorflow that is not used for training. A tensorflow without cuda is ok since the model is trained with pytorch. Latter update will remove tensorflow and provied a pure-pytorch version that also enable batch training.)
 
 ## Getting Started
 
@@ -52,27 +49,25 @@ python gripper_get_demo.py  --mode train --task assembling-kits-3dtoolkit --n 10
 python gripper_get_demo.py  --mode test  --task assembling-kits-3dtoolkit --n 100 --disp
 ```
 
-
-**Step 2.** Train a model e.g., Equivariant Transporter. Parameters are saved to the `checkpoints_{model}` directory. 
+**Step 2.** Train a model e.g., Equivariant Transporter. Parameters are saved to the `checkpoints_{model}` directory. Note that important condifigurations are saves in `./configs/train.yaml` by default.
 
 ```shell
-python train.py --task assembling-kits-3dtoolkit --n_demos 100 --n_rotations 36 --agent so2-align --n_align 2 --n_steps 10000 --interval 2000 --gpu_id 0 --logging
+python train.py --task assembling-kits-3dtoolkit --n_demos 100 --n_rotations 36 --agent so2 --n_align 2 --n_steps 10000 --interval 2000 --gpu_id 0 --logging
 # --config_file train.yaml --postfix h2 --seed 0
 ```
 
 **Step 3.** Evaluate the model trained for 200 iterations with 1 demos. Results are saved to the `test_{model}` directory.
 
 ```shell
-python gripper_test.py --task assembling-kits-3dtoolkit --n_demos 100 --n_rotations 36 --agent so2-align --n_align 2 --n_steps 10000 --gpu_id 0 --disp --postfix h2
-# --config_file train.yaml --entire --seed 0
+python gripper_test.py --task assembling-kits-3dtoolkit --n_demos 100 --n_rotations 36 --agent so2 --n_align 2 --n_steps 10000 --gpu_id 0 --disp
+# --config_file train.yaml --entire --seed 0 --postfix h2
 ```
 
 
 **Step 4.** Plot and print results.
 
 ```shell
-python plot.py --task assembling-kits-3dtoolkit --n_rotations 36 --n_demos 100 --agent so2-alignh2 --disp
-# seed 0
+python plot.py --task assembling-kits-3dtoolkit --n_demos 100 --n_rotations 36 --agent so2 --disp
 ```
 
 **Optional.** Tracking training and validation losses with Tensorboard.
@@ -80,18 +75,7 @@ python plot.py --task assembling-kits-3dtoolkit --n_rotations 36 --n_demos 100 -
 python -m tensorboard.main --logdir=logs  # Open the browser to where it tells you to.
 ```
 
-## More description
-
-**Models:** Equivariant Transporter Network (`--equ`); Equivariant Transporter Network with a Tail Network(`--equ_tail`);  Pytorch-version Transporter Net(`--non`); Hybrid Models (`--femi` and `--semi`).
-Equivariant Transporter Network with a Tail Network performs well with a slightly long training time.
-
 **Observations:** RGB-D images (4X320X160)
 
 **Actions:** Picking: (u,v,theta); Placing: (u,v,theta)
-
-## Future Updates
-
-- Equivairant Transporter Network without Picking angle inference.
-- Pure Pytorch implementation
-- Batch training
 
