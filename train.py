@@ -20,7 +20,6 @@ from networks.equivariant_transporter import TransporterAgent as equ_agent
 # from networks.gr_non_equi_transporter import TransporterAgent as gr_agent
 # from networks.gr_equi_transporter import TransporterAgent as gr_equ_agent
 from networks.so2_equivariant_transporter import TransporterAgent as so2_equ_agent
-from networks.so2_align_transporter import TransporterAgent as so2_align_agent
 from networks.mix_equ_transporter import TransporterAgent as mix_equ_agent
 
 # import faulthandler; faulthandler.enable()
@@ -32,10 +31,8 @@ parser.add_argument('--config_file', type=str, default='train.yaml')
 parser.add_argument('--task', type=str, default='block-insertion')
 parser.add_argument('--n_demos', type=int, default=10)
 parser.add_argument('--n_rotations', type=int, default=36)
-parser.add_argument('--agent', type=str, default='so2-align')
+parser.add_argument('--agent', type=str, default='so2')
 parser.add_argument('--postfix', type=str, default='')
-parser.add_argument('--n_align', type=int, default=12)
-parser.add_argument('--n_feat', type=int, default=1)
 parser.add_argument('--n_steps', type=int,default=10000) # the total train step n_steps/intervel = epoch
 parser.add_argument('--interval', type=int,default=1000) # the training step for one epoch interval/n_demos = the number of resued data
 # parser.add_argument('--n_runs', type=int,default=1)# not important
@@ -136,14 +133,6 @@ def main():
             network_params = args.so2
             # print(network_params)
             agent = so2_equ_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
-                                  n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
-                                  init=args.init,postfix=cmd_args.postfix)
-        elif cmd_args.agent == 'so2-align':
-            print('so(2)-align equivariant agent')
-            network_params = args.so2
-            network_params['transport']['n_ori_align'] = cmd_args.n_align
-            network_params['transport']['n_dim_per_ori'] = cmd_args.n_feat
-            agent = so2_align_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
                                   n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
                                   init=args.init,postfix=cmd_args.postfix)
         elif cmd_args.agent == 'non':

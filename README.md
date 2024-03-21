@@ -1,5 +1,5 @@
 # Discretizing SO(2)-Equivariant Features for Robotic Kitting
-[PDF](https://arxiv.org/ftp/arxiv/papers/2403/2403.13336.pdf)&nbsp;&nbsp;•&nbsp;&nbsp; **RSS 2022**
+[PDF](https://arxiv.org/ftp/arxiv/papers/2403/2403.13336.pdf)
 
 *Jiadong Zhou, Yadan Zeng, Huixu Dong, I-Ming Chen*
 
@@ -52,14 +52,14 @@ python gripper_get_demo.py  --mode test  --task assembling-kits-3dtoolkit --n 10
 **Step 2.** Train a model e.g., Equivariant Transporter. Parameters are saved to the `checkpoints_{model}` directory. Note that important condifigurations are saves in `./configs/train.yaml` by default.
 
 ```shell
-python train.py --task assembling-kits-3dtoolkit --n_demos 100 --n_rotations 36 --agent so2 --n_align 2 --n_steps 10000 --interval 2000 --gpu_id 0 --logging
+python train.py --task assembling-kits-3dtoolkit --n_demos 100 --n_rotations 36 --agent so2 --n_steps 10000 --interval 2000 --gpu_id 0 --logging
 # --config_file train.yaml --postfix h2 --seed 0
 ```
 
 **Step 3.** Evaluate the model trained for 200 iterations with 1 demos. Results are saved to the `test_{model}` directory.
 
 ```shell
-python gripper_test.py --task assembling-kits-3dtoolkit --n_demos 100 --n_rotations 36 --agent so2 --n_align 2 --n_steps 10000 --gpu_id 0 --disp
+python gripper_test.py --task assembling-kits-3dtoolkit --n_demos 100 --n_rotations 36 --agent so2 --n_steps 10000 --gpu_id 0 --disp
 # --config_file train.yaml --entire --seed 0 --postfix h2
 ```
 
