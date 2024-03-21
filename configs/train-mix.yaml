@@ -69,7 +69,7 @@ mix:
     sample: 16                    # sample no. for ift conversion
     lite: True
     label_type: 2                 # [gaussian, rectangle, pulse, triangle]
-    label_smooth: 0.1
+    label_smooth: 0.0
     label_radius: 1
     label_sigma: 1
   angle:
@@ -77,7 +77,7 @@ mix:
     sample: 36                    # sample no. for ift conversion
     lite: True
     label_type: 2                 # [gaussian, rectangle, pulse, triangle]
-    label_smooth: 0.1
+    label_smooth: 0.0
     label_radius: 1
     label_sigma: 1
   transport:

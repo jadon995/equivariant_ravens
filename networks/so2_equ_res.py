@@ -1,3 +1,7 @@
+import os
+import sys
+file_dir = os.path.dirname(__file__)
+sys.path.append(file_dir)
 import torch
 from escnn import gspaces
 import escnn.nn as nn
@@ -259,6 +263,7 @@ class so2_res(torch.nn.Module):
 
         self.fcn = torch.nn.Sequential(
             torch.nn.Conv2d(ftgpool.out_type.size, middle_dim[0], kernel_size=3, stride=1, padding=1),
+            # torch.nn.Conv2d(ftgpool.out_type.size, middle_dim[0], kernel_size=1, stride=1, padding=0),
             torch.nn.ELU(inplace=True),
             torch.nn.Conv2d(middle_dim[0], out_dim, kernel_size=1, stride=1, padding=0),
         )

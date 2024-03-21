@@ -5,6 +5,8 @@ import os
 from transform import Transform,Rotation
 import utils
 from termcolor import colored
+import matplotlib.pyplot as plt
+from PIL import Image
 
 
 class PickPlace():
@@ -12,6 +14,7 @@ class PickPlace():
 
     def __init__(self, height=0.32, speed=0.01):
         self.height, self.speed = height, speed
+        self.object_id = -1
 
     def remove(self,ee):
         p.removeBody(ee.body.uid)
@@ -27,6 +30,9 @@ class PickPlace():
         """
         if task_name == 'assembling-kits':
             self.height = 0.15 # speed up simulation
+
+        self.object_id += 1
+        # self.show_image(0)
 
         pick_pose, place_pose = pose0, pose1
         pick_pose_ = Transform(Rotation.from_quat(pick_pose[1]), pick_pose[0])
@@ -58,7 +64,8 @@ class PickPlace():
         if task_name == 'assembling-kits':
             offset = Transform(Rotation.identity(), [0, 0, -0.005])
             pick_pose_ = offset*Transform(Rotation.from_quat(pick_pose[1]), pick_pose[0])
-            vel = 0.06
+            vel = 0.06     
+        # self.show_image(1)
 
         # pick_euler = utils.quatXYZW_to_eulerXYZ(pick
         # 
@@ -72,6 +79,7 @@ class PickPlace():
         # ee.rotate_theta(theta0)
         # move toward to pick location and abort on contact
         ee.move_tcp_xyz(pick_pose_,eef_step=eef_step,vel=vel,abort_on_contact=False)
+        # self.show_image(2)
 
         if ee.detect_contact():
             #self.remove(ee)
@@ -98,6 +106,8 @@ class PickPlace():
 
         # move to the pre-place location
         ee.move_tcp_xyz(preplace_pose,eef_step=eef_step,vel=vel,abort_on_contact=False)
+        # self.show_image(3)
+
         #move to the pre-place pose
         place_euler = utils.quatXYZW_to_eulerXYZ(place_pose[1])
         theta = np.float(place_euler[2])
@@ -107,6 +117,7 @@ class PickPlace():
         #print(colored(theta,'red'))
         ee.rotate_theta(theta)
         # #TODO discretized theta
+        # self.show_image(4)
 
         # for _ in range(int(self.height/0.001)):
         if task_name == 'block-insertion':
@@ -133,6 +144,8 @@ class PickPlace():
             print(colored('failed to grasp', 'red'))
             self.remove(ee)
             return False
+        # self.show_image(5)
+
         #time.sleep(0.1)
         # delete the constraint
         ee.release()
@@ -141,5 +154,17 @@ class PickPlace():
         time.sleep(0.1)
         if task_name != 'assembling-kits': # to accelerate assembling tests
             ee.move_tcp_xyz(postplace_pose,eef_step=eef_step,vel=vel)
+
+        # self.show_image(6)
         self.remove(ee)
+        # self.show_image(7)
         return False
+    
+    def show_image(self, image_id=0):
+        p.stepSimulation()
+        width, height, rgbImg, depthImg, segImg = p.getCameraImage(width=1920, height=1440)
+        image = Image.fromarray(rgbImg)
+        image.save(f'record/{self.object_id//4}_{self.object_id%4}_{image_id}.png')
+        # image_array = np.array(image)
+        # plt.imshow(image_array)
+        # plt.show()
