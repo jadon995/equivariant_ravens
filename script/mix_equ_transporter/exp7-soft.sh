@@ -1,14 +1,14 @@
 #! /bin/bash
 tasks=(assembling-kits-3dtoolkit)
-n_demos=(1)
-n_rotations=(36 180)
+n_demos=(100 10 1)
+n_rotations=(120)
 n_align=12
 n_step=10000
 interval=2000
 n_tests=(2000 4000 6000 8000 10000)
 agents=(mix)
 seed=0
-gpu_id=2
+gpu_id=1
 
 for task in ${tasks[*]};
 do

@@ -1,7 +1,7 @@
 #! /bin/bash
 tasks=(assembling-kits-3dtoolkit)
-n_demos=(1)
-n_rotations=(36)
+n_demos=(100 10 1)
+n_rotations=(120)
 n_align=12
 n_step=10000
 interval=2000

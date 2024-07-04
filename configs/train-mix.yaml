@@ -88,6 +88,29 @@ mix:
     label_radius: 1
     label_sigma: 1
 
+mix_align:
+  position:
+    N: 6
+    lite: True
+    label_type: 2
+    label_smooth: 0.0
+    label_radius: 1
+    label_sigma: 1
+  angle:
+    lite: True
+    label_type: 2
+    label_smooth: 0.0
+    label_radius: 1
+    label_sigma: 1
+  transport:
+    irrep: 3                      # irreps: [0, max_irreps]
+    sample: 16                    # sample no. for ift conversion
+    lite: True
+    label_type: 2                 # [gaussian, rectangle, pulse, triangle]
+    label_smooth: 0.0
+    label_radius: 1
+    label_sigma: 1
+
 # training & testing
 # gpu_id: 0                         # -1 means cpu
 # n_demos: 100                      # demo no for model training
