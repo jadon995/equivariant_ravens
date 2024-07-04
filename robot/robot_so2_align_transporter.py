@@ -15,17 +15,21 @@ import torch.nn.functional as F
 # from equ_transport import Transport
 # from equ_attention import Attention
 
-from so2_equ_attention import Attention
-# from so2_equ_transport import Transport
-from so2_align_transport import Transport
+# from so2_equ_attention import Attention
+from networks.so2_equ_attention import Attention
+# from so2_align_transport import Transport
+from networks.so2_align_transport import Transport
 
-from raven import cameras
-from raven import utils
-
-import tensorflow as tf
+# from raven import cameras
+# from raven import utils
+import utils
+from zivid import CAMERA_CONFIG
+from environment import BOUNDS
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, FancyArrow
+
+import tensorflow as tf
 
 
 class TransporterAgent:
@@ -38,11 +42,18 @@ class TransporterAgent:
         self.total_steps = 0
         self.crop_size = 64
         self.n_rotations = n_rotations
-        self.pix_size = 0.003125
-        self.in_shape = (320, 160, 6)
-        self.cam_config = cameras.RealSenseD415.CONFIG
-        self.models_dir = os.path.join(root_dir, self.name, 'so2-align'+postfix)
-        self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
+        # self.pix_size = 0.003125
+        # self.pix_size = 0.002
+        self.pix_size = 0.00175
+        # self.in_shape = (320, 160, 6)
+        # self.in_shape = (300, 200, 6)
+        self.in_shape = (320, 240, 6)
+        # self.cam_config = cameras.RealSenseD415.CONFIG
+        self.cam_config = CAMERA_CONFIG
+        self.models_dir = os.path.join(root_dir, self.name, 'robot-so2-align'+postfix)
+        # self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
+        self.bounds = BOUNDS # np.array([[0.67, 1.07], [-0.3, 0.3], [-0.1, 0.1]])
+                             # np.array([[0.655, 1.075], [-0.28, 0.28], [-0.1, 0.1]])
         if device == -1:
             device = torch.device('cpu')
         else:
@@ -121,6 +132,7 @@ class TransporterAgent:
         # p1 theta is the difference (no change during transform)
         p1 = utils.xyz_to_pix(p1_xyz, self.bounds, self.pix_size)
         p1_theta = -np.float32(utils.quatXYZW_to_eulerXYZ(p1_xyzw)[2])
+        p1_theta = p1_theta - p0_theta # p1 defines the change in orientation
         # p1_theta = (p1_theta + 2*np.pi)%(2*np.pi)
         # Data augmentation.
         if augment:
@@ -139,7 +151,10 @@ class TransporterAgent:
         """
         time_0 = time.time()
         img, p0, p0_theta, p1, p1_theta = self.get_sample(dataset)
-        # self._display_sample(np.uint8(img[:, :, :3]), p0, p0_theta-np.pi/2, p1, p0_theta+p1_theta-np.pi/2)
+        # img, p0, p0_theta, p1, p1_theta = self.get_sample(dataset, False)
+
+        # theta_0 = p0_theta % np.pi
+        # self._display_sample(np.uint8(img[:, :, :3]), p0, theta_0-np.pi/2, p1, theta_0+p1_theta-np.pi/2)
         # print('img',img.shape)
         # print('p0',p0)
         # print('p0_theta',p0_theta)
