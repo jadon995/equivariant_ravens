@@ -30,6 +30,7 @@ class Robotiq():
 
     def close(self):
         self.execute_commend('c')
+        rospy.sleep(1)
 
     def move(self, value):
         value = int(value)

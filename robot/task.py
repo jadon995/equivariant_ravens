@@ -10,5 +10,15 @@ class Task():
 
     def get_reward(self):
         return 1.0 / self.max_steps
+    
+class KitFourTools(Task):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.max_steps = 4
+
+class KitSixTools(Task):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.max_steps = 6
         
 

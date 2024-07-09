@@ -28,6 +28,7 @@ from networks.so2_equivariant_transporter import TransporterAgent as so2_equ_age
 from networks.so2_align_transporter import TransporterAgent as so2_align_agent
 from networks.mix_equ_transporter import TransporterAgent as mix_equ_agent
 from robot_so2_align_transporter import TransporterAgent as robot_align_agent
+from robot_so2_align_transporter_mini import TransporterAgent as robot_align_mini_agent
 
 # import faulthandler; faulthandler.enable()
 
@@ -35,10 +36,10 @@ parser = argparse.ArgumentParser(description='ravens')
 parser.add_argument('--config_file', type=str, default='train-robot.yaml')
 # parser.add_argument('--train_dir', type=str, default='.')
 # parser.add_argument('--data_dir', type=str, default='.')
-parser.add_argument('--task', type=str, default='robot-kit-handtools')
+parser.add_argument('--task', type=str, default='robot-kit-six-tools')
 parser.add_argument('--n_demos', type=int, default=10)
 parser.add_argument('--n_rotations', type=int, default=180)
-parser.add_argument('--agent', type=str, default='robot-align')
+parser.add_argument('--agent', type=str, default='robot-align-mini')
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--n_align', type=int, default=12)
 parser.add_argument('--n_feat', type=int, default=1)
@@ -174,6 +175,14 @@ def main():
             network_params['transport']['n_ori_align'] = cmd_args.n_align
             network_params['transport']['n_dim_per_ori'] = cmd_args.n_feat
             agent = robot_align_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
+                                  n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
+                                  init=args.init,postfix=cmd_args.postfix)
+        elif cmd_args.agent == 'robot-align-mini':
+            print('robot-align-mini equivariant agent')
+            network_params = args.so2
+            network_params['transport']['n_ori_align'] = cmd_args.n_align
+            network_params['transport']['n_dim_per_ori'] = cmd_args.n_feat
+            agent = robot_align_mini_agent(name=name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
                                   n_rotations=cmd_args.n_rotations,load=args.load,network_params=network_params,
                                   init=args.init,postfix=cmd_args.postfix)
         else:

@@ -24,7 +24,7 @@ from networks.so2_align_transport import Transport
 # from raven import utils
 import utils
 from zivid import CAMERA_CONFIG
-from environment import BOUNDS
+# from environment import BOUNDS
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, FancyArrow
@@ -44,16 +44,19 @@ class TransporterAgent:
         self.n_rotations = n_rotations
         # self.pix_size = 0.003125
         # self.pix_size = 0.002
-        self.pix_size = 0.00175
+        # self.pix_size = 0.00175
+        self.pix_size = 0.0025
         # self.in_shape = (320, 160, 6)
         # self.in_shape = (300, 200, 6)
-        self.in_shape = (320, 240, 6)
+        # self.in_shape = (320, 240, 6)
+        self.in_shape = (240, 160, 6)
         # self.cam_config = cameras.RealSenseD415.CONFIG
         self.cam_config = CAMERA_CONFIG
-        self.models_dir = os.path.join(root_dir, self.name, 'robot-so2-align'+postfix)
+        self.models_dir = os.path.join(root_dir, self.name, 'robot-so2-align-mini'+postfix)
         # self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
-        self.bounds = BOUNDS # np.array([[0.67, 1.07], [-0.3, 0.3], [-0.1, 0.1]])
+        # self.bounds = BOUNDS # np.array([[0.67, 1.07], [-0.3, 0.3], [-0.1, 0.1]])
                              # np.array([[0.655, 1.075], [-0.28, 0.28], [-0.1, 0.1]])
+        self.bounds = np.array([[0.66, 1.06], [-0.30, 0.30], [-0.1, 0.1]])
         if device == -1:
             device = torch.device('cpu')
         else:

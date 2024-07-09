@@ -14,7 +14,7 @@ import os
 
 from dataset import Dataset
 from environment import Environment as RobotEnv
-from task import Task
+from task import Task, KitFourTools, KitSixTools
 
 parser = argparse.ArgumentParser(description='ravens_demos')
 
@@ -27,7 +27,7 @@ parser.add_argument('--continuous', action='store_true', default=False)
 parser.add_argument('--steps_per_seg', type=int, default=3)
 #parser.add_argument('--task', type=str, default='align-box-corner')
 #parser.add_argument('--task', type=str, default='place-red-in-green')
-parser.add_argument('--task', type=str, default='robot-kit-handtools')
+parser.add_argument('--task', type=str, default='robot-kit-six-tools')
 #parser.add_argument('--task', type=str, default='stack-block-pyramid')
 #parser.add_argument('--task', type=str, default='palletizing-boxes')
 #parser.add_argument('--task', type=str, default='packing-boxes')
@@ -69,7 +69,12 @@ def main():
         raise RuntimeError('gripper version no {}'.format(args.task))
 '''
     robot_env = RobotEnv()
-    robot_task = Task()
+
+    if args.task == 'robot-kit-four-tools':
+        robot_task = KitFourTools()
+    elif args.task == 'robot-kit-six-tools':
+        robot_task = KitSixTools()
+    # robot_task = Task()
     robot_task.mode = args.mode
     agent = None # human demonstrations   
     dataset = Dataset(os.path.join(args.data_dir, f'{args.task}-{robot_task.mode}'))
@@ -114,6 +119,7 @@ def main():
             
             total_reward += reward
             print(f'Total Reward: {total_reward}')
+            input("Enter [y] to move home: ")
             robot_env.reset()
 
         episode.append((obs, None, reward, info)) # last episode as a record

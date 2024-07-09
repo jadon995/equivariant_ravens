@@ -65,7 +65,7 @@ class UR():
 
         self.move_group.set_pose_target(pose_goal)
         plan_success, plan, planning_time, error_code = self.move_group.plan()
-        print("plan result:", plan_success)
+        # print("plan result:", plan_success)
         self.display_plan(plan)
 
         self.move_group.execute(plan, wait=True)
@@ -89,8 +89,8 @@ class UR():
         display_trajectory.trajectory.append(plan)
         self.display_trajectory_publisher.publish(display_trajectory)
         
-        while(input("Repeat display or enter [y] to execute:") != 'y'): # ask for user input
-            self.display_trajectory_publisher.publish(display_trajectory)
+        # while(input("Repeat display or enter [y] to execute:") != 'y'): # ask for user input
+            # self.display_trajectory_publisher.publish(display_trajectory)
     
     def move_home(self):
         self.move_joint(HOME_JOINT)
