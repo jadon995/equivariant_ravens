@@ -128,6 +128,20 @@ def reconstruct_heightmaps(color, depth, configs, bounds, pixel_size):
     colormaps.append(colormap)
   return heightmaps, colormaps
 
+def reconstruct_heightmaps_from_points(color, xyz, configs, bounds, pixel_size):
+  heightmaps, colormaps = [], []
+  for color, xyz, config in zip(color, xyz, configs):
+    position = np.array(config['position']).reshape(3, 1)
+    rotation = p.getMatrixFromQuaternion(config['rotation'])
+    rotation = np.array(rotation).reshape(3, 3)
+    transform = np.eye(4)
+    transform[:3, :] = np.hstack((rotation, position))
+    # xyz = transform_pointcloud(xyz, transform)
+    heightmap, colormap = get_heightmap(xyz, color, bounds, pixel_size)
+    heightmaps.append(heightmap)
+    colormaps.append(colormap)
+  return heightmaps, colormaps
+
 
 def pix_to_xyz(pixel, height, bounds, pixel_size, skip_height=False):
   """Convert from pixel location on heightmap to 3D position."""
@@ -336,10 +350,14 @@ def transform_pts_Rt(pts, R, t):
 
 def preprocess(img):
   """Pre-process input (subtract mean, divide by std)."""
-  color_mean = 0.18877631
-  depth_mean = 0.00509261
-  color_std = 0.07276466
-  depth_std = 0.00903967
+  # color_mean = 0.18877631
+  # depth_mean = 0.00509261
+  # color_std = 0.07276466
+  # depth_std = 0.00903967
+  color_mean = 0.3500047316153844
+  depth_mean = 0.06189509704709053
+  color_std = 0.24858064373043456
+  depth_std = 0.01751254615234933
   img[:, :, :3] = (img[:, :, :3] / 255 - color_mean) / color_std
   img[:, :, 3:] = (img[:, :, 3:] - depth_mean) / depth_std
   return img
@@ -349,6 +367,22 @@ def get_fused_heightmap(obs, configs, bounds, pix_size):
   """Reconstruct orthographic heightmaps with segmentation masks."""
   heightmaps, colormaps = reconstruct_heightmaps(
       obs['color'], obs['depth'], configs, bounds, pix_size)
+  colormaps = np.float32(colormaps)
+  heightmaps = np.float32(heightmaps)
+
+  # Fuse maps from different views.
+  valid = np.sum(colormaps, axis=3) > 0
+  repeat = np.sum(valid, axis=0)
+  repeat[repeat == 0] = 1
+  cmap = np.sum(colormaps, axis=0) / repeat[Ellipsis, None]
+  cmap = np.uint8(np.round(cmap))
+  hmap = np.max(heightmaps, axis=0)  # Max to handle occlusions.
+  return cmap, hmap
+
+def get_fused_heightmap_from_points(obs, configs, bounds, pix_size):
+  """Reconstruct orthographic heightmaps with segmentation masks."""
+  heightmaps, colormaps = reconstruct_heightmaps_from_points(
+      obs['color'], obs['xyz'], configs, bounds, pix_size)
   colormaps = np.float32(colormaps)
   heightmaps = np.float32(heightmaps)
 

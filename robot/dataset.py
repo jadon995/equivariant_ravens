@@ -106,16 +106,18 @@ class Dataset:
       seed: random seed used to initialize the episode.
       episode: list of (obs, act, reward, info) tuples.
     """
-    color, depth, action, reward, info = [], [], [], [], []
+    color, depth, xyz, action, reward, info = [], [], [], [], [], []
     for obs, act, r, i in episode:
       color.append(obs['color'])
       depth.append(obs['depth'])
+      xyz.append(obs['xyz'])
       action.append(act)
       reward.append(r)
       info.append(i)
 
     color = np.uint8(color)
-    depth = np.float32(depth)
+    # depth = np.float32(depth)
+    xyz = np.float32(xyz)
 
     def dump(data, field):
       field_path = os.path.join(self.path, field)
@@ -127,6 +129,7 @@ class Dataset:
 
     dump(color, 'color')
     dump(depth, 'depth')
+    dump(xyz, 'xyz')
     dump(action, 'action')
     dump(reward, 'reward')
     dump(info, 'info')
@@ -176,6 +179,7 @@ class Dataset:
         # Load data.
         color = load_field(episode_id, 'color', fname)
         depth = load_field(episode_id, 'depth', fname)
+        xyz = load_field(episode_id, 'xyz', fname)
         action = load_field(episode_id, 'action', fname)
         reward = load_field(episode_id, 'reward', fname)
         info = load_field(episode_id, 'info', fname)
@@ -183,7 +187,7 @@ class Dataset:
         # Reconstruct episode.
         episode = []
         for i in range(len(action)):
-          obs = {'color': color[i], 'depth': depth[i]} if images else {}
+          obs = {'color': color[i], 'depth': depth[i], 'xyz': xyz[i]} if images else {}
           episode.append((obs, action[i], reward[i], info[i]))
         return episode, seed
 

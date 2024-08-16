@@ -5,7 +5,7 @@ sys.path.append(file_dir)
 sys.path.append('..')
 import time
 import numpy as np
-import os
+import copy
 import torch
 # import e2cnn
 # from e2cnn import gspaces
@@ -23,14 +23,24 @@ from networks.so2_align_transport import Transport
 # from raven import cameras
 # from raven import utils
 import utils
-from zivid import CAMERA_CONFIG
-from environment import BOUNDS
+# from zivid import CAMERA_CONFIG
+# from environment import BOUNDS
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, FancyArrow
 
 import tensorflow as tf
 
+CAMERA_CONFIG = [{
+    'image_size': (1200, 1920),
+    'intrinsics': (2779.074462890625, 0.0, 980.9558715820312, 
+                   0.0, 2778.749755859375, 583.1567993164062, 
+                   0.0, 0.0, 1.0),
+    'position': (0.55504, -0.0328664, 1.01759),    # extrinsic calibration
+    # 'rotation': utils.eulerXYZ_to_quatXYZW((2.98994, -0.022727, 1.55985)),     # extrinsic calibration
+    'rotation': (0.70199882, -0.69878887,  0.09150628, -0.10255916),     # extrinsic calibration
+    'zrange': (0.6, 2.0),
+    'noise': False}]
 
 class TransporterAgent:
     """Agent that uses Transporter Networks."""
@@ -44,16 +54,15 @@ class TransporterAgent:
         self.n_rotations = n_rotations
         # self.pix_size = 0.003125
         # self.pix_size = 0.002
-        self.pix_size = 0.00175
+        self.pix_size = 0.0025
         # self.in_shape = (320, 160, 6)
         # self.in_shape = (300, 200, 6)
-        self.in_shape = (320, 240, 6)
+        self.in_shape = (240, 160, 6)
         # self.cam_config = cameras.RealSenseD415.CONFIG
         self.cam_config = CAMERA_CONFIG
         self.models_dir = os.path.join(root_dir, self.name, 'robot-so2-align'+postfix)
         # self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
-        self.bounds = BOUNDS # np.array([[0.67, 1.07], [-0.3, 0.3], [-0.1, 0.1]])
-                             # np.array([[0.655, 1.075], [-0.28, 0.28], [-0.1, 0.1]])
+        self.bounds = np.array([[0.66, 1.06], [-0.30, 0.30], [-0.1, 0.1]])
         if device == -1:
             device = torch.device('cpu')
         else:
@@ -93,7 +102,7 @@ class TransporterAgent:
         #   assert input_image.shape[2] == 12, input_image.shape
 
         # Get color and height maps from RGB-D images.
-        cmap, hmap = utils.get_fused_heightmap(
+        cmap, hmap = utils.get_fused_heightmap_from_points(
             obs, self.cam_config, self.bounds, self.pix_size)
         # print('depth image',hmap.shape, hmap[Ellipsis, None].shape)
         img = np.concatenate((cmap,
@@ -180,6 +189,7 @@ class TransporterAgent:
         print('Skipping validation.')
 
     def test_visualize(self, obs, act):
+        obs = copy.deepcopy(obs)
         img = self.get_image(obs)
 
         p0_xyz, p0_xyzw = act['pose0']
@@ -309,8 +319,8 @@ class TransporterAgent:
         # print(img.shape)
 
         # Define the parameters for two circles (x, y, radius)
-        circle1 = Circle((pos0[1], pos0[0]), 5, color='red', fill=True, alpha=0.5)  # Solid red circle
-        circle2 = Circle((pos1[1], pos1[0]), 5, color='blue', fill=True, alpha=0.5)  # Solid blue circle
+        circle1 = Circle((pos0[1], pos0[0]), 1, color='red', fill=True, alpha=0.5)  # Solid red circle
+        circle2 = Circle((pos1[1], pos1[0]), 1, color='blue', fill=True, alpha=0.5)  # Solid blue circle
         # print(pos0, pos1)
 
         # Add the circles to the plot
@@ -318,7 +328,7 @@ class TransporterAgent:
         ax.add_patch(circle2)
 
         # Function to add an arrow
-        def add_arrow(center, angle, length=30, color='yellow'):
+        def add_arrow(center, angle, length=20, color='yellow'):
             # Convert angle to radians
             # rad = np.radians(angle)
             rad = angle

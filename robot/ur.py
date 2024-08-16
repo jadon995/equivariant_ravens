@@ -7,8 +7,14 @@ import geometry_msgs.msg
 from math import pi
 from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
+import utils
 
-HOME_JOINT = [-0.192222, -1.528962, 2.250302, -2.293070, -1.574837, -0.190362]
+HOME_JOINT = [-0.23291093507875615, 
+              -1.708400388757223,
+              2.4170857111560267,
+              -2.279896398583883,
+              -1.573460880910055,
+              -0.23041087785829717]
 
 class UR():
     def __init__(self) -> None:
@@ -36,6 +42,8 @@ class UR():
         group_names = self.robot.get_group_names()
         print("Robot Groups:", self.robot.get_group_names())
 
+        print("Set max velocity")
+        self.move_group.set_max_velocity_scaling_factor(0.5)
         # Sometimes for debugging it is useful to print the entire state of the
         # robot:
         # print("Printing robot state")
@@ -101,8 +109,8 @@ if __name__ == "__main__":
     ur10 = UR()
 
     joint_goal = ur10.get_current_joint_values()
-    ur10.move_home()
     print(joint_goal)
+    ur10.move_home()
     # joint_goal[0] = pi
     # joint_goal[1] = -pi/4
     # joint_goal[2] = 0
@@ -120,7 +128,20 @@ if __name__ == "__main__":
 
     # waypoints = []
     # scale = 1.0
-    # wpose = ur10.get_current_pose()
+    wpose = ur10.get_current_pose()
+    print(wpose)
+
+    ori = utils.eulerXYZ_to_quatXYZW((pi, 0, pi/2))
+    wpose.position.x -= 0.1
+    wpose.orientation.x = ori[0]
+    wpose.orientation.y = ori[1]
+    wpose.orientation.z = ori[2]
+    wpose.orientation.w = ori[3]
+    ur10.move_pose(wpose)
+
+    wpose = ur10.get_current_pose()
+    print(wpose)
+
     # wpose.position.z -= scale * 0.1  # First move up (z)
     # wpose.position.y += scale * 0.2  # and sideways (y)
     # waypoints.append(copy.deepcopy(wpose))

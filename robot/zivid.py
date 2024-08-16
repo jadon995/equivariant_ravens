@@ -9,8 +9,8 @@ from zivid_camera.srv import *
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 import numpy as np
-import utils
 from std_msgs.msg import Bool
+from sensor_msgs.msg import PointCloud2
 
 ACQUISITION_NUM = 5 # Acquisition number for the camera
 
@@ -19,9 +19,9 @@ CAMERA_CONFIG = [{
     'intrinsics': (2779.074462890625, 0.0, 980.9558715820312, 
                    0.0, 2778.749755859375, 583.1567993164062, 
                    0.0, 0.0, 1.0),
-    'position': (0.894348, 0.162832, 0.939701),    # extrinsic calibration
+    'position': (0.55504, -0.0328664, 1.01759),    # extrinsic calibration
     # 'rotation': utils.eulerXYZ_to_quatXYZW((2.98994, -0.022727, 1.55985)),     # extrinsic calibration
-    'rotation': (0.708273, -0.701772, 0.0452119, 0.0618219),     # extrinsic calibration
+    'rotation': (0.70199882, -0.69878887,  0.09150628, -0.10255916),     # extrinsic calibration
     'zrange': (0.6, 2.0),
     'noise': False}]
 
@@ -31,10 +31,11 @@ class Zivid():
         # camera setup
         rospy.wait_for_service("/zivid_camera/capture", 30)
         self.capture_service = rospy.ServiceProxy("/zivid_camera/capture", Capture)
-        rospy.Subscriber("/zivid_camera/color/image_color", Image, self.__color_callback)
-        rospy.Subscriber("/zivid_camera/depth/image", Image, self.__depth_callback)
+        # rospy.Subscriber("/zivid_camera/color/image_color", Image, self.__color_callback)
+        # rospy.Subscriber("/zivid_camera/depth/image", Image, self.__depth_callback)
+        rospy.Subscriber("/zivid_camera/points/xyzrgba", PointCloud2, self.__xyz_callback)
 
-        camera_trigger_timer = rospy.Timer(rospy.Duration(1), self._trigger_loop_callback)
+        # camera_trigger_timer = rospy.Timer(rospy.Duration(1), self._trigger_loop_callback)
         
         self.__config_camera() # set of the camera configuration
 
@@ -45,17 +46,18 @@ class Zivid():
         pass
 
     def get_obs(self):
-        obs = {"color": [], "depth": []}
+        obs = {"color": [], "depth": [], "xyz": []}
 
         # triger the camera
-        self.color_image, self.depth_image = None, None
+        self.color_image, self.depth_image, self.xyz = None, None, None
         self.capture_service()
         # while not (self.color_image and self.depth_image):
-        while self.color_image is None or self.depth_image is None:
+        while self.color_image is None or self.xyz is None:
             rospy.sleep(0.1)
 
         obs["color"].append(self.color_image)
         obs["depth"].append(self.depth_image)
+        obs["xyz"].append(self.xyz)
 
         return obs
         
@@ -98,6 +100,24 @@ class Zivid():
         # plt.show()
         return
     
+    def __xyz_callback(self, msg):
+        cloud_array = ros_numpy.point_cloud2.pointcloud2_to_array(msg)
+        points = np.zeros((cloud_array.shape[0], cloud_array.shape[1], 3))
+        color = np.zeros((cloud_array.shape[0], cloud_array.shape[1], 3))
+        # Extract x, y, z coordinates
+        points[:, :, 0] = cloud_array['x']
+        points[:, :, 1] = cloud_array['y']
+        points[:, :, 2] = cloud_array['z']
+
+        rgba = cloud_array['rgba'].view(np.uint32)
+
+        color[:, :, 0] = (rgba >> 16) & 0xFF  # Red channel
+        color[:, :, 1] = (rgba >> 8) & 0xFF   # Green channel
+        color[:, :, 2] = rgba & 0xFF          # Blue channel
+
+        self.xyz = points
+        self.color_image = color
+
     
     def __config_camera(self):
         rospy.loginfo("Enabling the reflection filter")
@@ -114,14 +134,15 @@ class Zivid():
             "enabled": True,
             "aperture": 5.66,
             "exposure_time": 20000,
+            "brightness": 1.8
             }
             acquisition_client.update_configuration(acquisition_config)
 
     
-    def _trigger_loop_callback(self, event):
-        while self.keep_capturing:
-            self.capture_service()
-            rospy.sleep(1)
+    # def _trigger_loop_callback(self, event):
+    #     while self.keep_capturing:
+    #         self.capture_service()
+    #         rospy.sleep(1)
 
     def start_trigger_loop(self):
         self.keep_capturing = True
@@ -133,12 +154,16 @@ class Zivid():
 if __name__ == "__main__":
     rospy.init_node("zivid_capture_node", anonymous=True)
 
-    pose = (np.array([-0.276857, 0.872525, 0.942407]),
-            np.array([0.708273, -0.701772, 0.0452119, 0.0618219]))
-    euler = utils.quatXYZW_to_eulerXYZ(pose[1])
-    print(euler) # (0.15161050485454336, -3.1186019216361607, -1.578271003032245)
+    # pose = (np.array([-0.276857, 0.872525, 0.942407]),
+            # np.array([0.708273, -0.701772, 0.0452119, 0.0618219]))
+    # euler = utils.quatXYZW_to_eulerXYZ(pose[1])
+    # print(euler) # (0.15161050485454336, -3.1186019216361607, -1.578271003032245)
 
     # zivid = Zivid()
     # while not rospy.is_shutdown():
     #     rospy.sleep(5)  # Sleep to prevent using 100% CPU
     #     zivid.get_obs()
+    zivid = Zivid()
+    while not rospy.is_shutdown():
+        zivid.get_obs()
+        rospy.sleep(13)

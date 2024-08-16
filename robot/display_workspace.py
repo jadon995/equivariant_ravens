@@ -4,7 +4,7 @@ from geometry_msgs.msg import Point
 import numpy as np
 
 # bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.3]])
-bounds = np.array([[0.65, 1.07], [-0.28, 0.28], [-0.1, 0.05]]) # (0.42, 0.56, 0.2)
+bounds = np.array([[0.66, 1.06], [-0.30, 0.30], [-0.1, 0.1]]) # (0.40, 0.60, 0.2)
 
 def publish_rectangle():
     rospy.init_node('rectangle_marker')
@@ -36,7 +36,7 @@ def publish_rectangle():
     marker.color.r = 0.0
     marker.color.g = 1.0
     marker.color.b = 0.0
-    marker.color.a = 0.25
+    marker.color.a = 1.0
 
     rate = rospy.Rate(10)  # 10 Hz
 
