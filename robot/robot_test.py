@@ -39,11 +39,10 @@ from networks.so2_align_transporter import TransporterAgent as so2_align_agent
 from networks.mix_equ_transporter import TransporterAgent as mix_equ_agent
 
 from robot_so2_align_transporter import TransporterAgent as robot_align_agent
-from robot_so2_align_transporter_mini import TransporterAgent as robot_align_mini_agent
 
 from dataset import Dataset
 from environment import Environment as RobotEnv
-from task import Task, KitFourTools, KitSixTools
+from task import Task, KitFourTools, KitSixTools, PlaceRedInGreen, StackBlockPyramid
 
 import faulthandler; faulthandler.enable()
 
@@ -53,8 +52,9 @@ parser.add_argument('--config_file', type=str, default='train-robot.yaml')
 # parser.add_argument('--root_dir', type=str, default='.')
 # parser.add_argument('--data_dir', type=str, default='.')
 # parser.add_argument('--assets_root', type=str, default='./raven/assets')
-# parser.add_argument('--task', type=str, default='robot-kit-handtools')
-parser.add_argument('--task', type=str, default='robot-kit-six-tools')
+# parser.add_argument('--task', type=str, default='robot-kit-six-tools')
+# parser.add_argument('--task', type=str, default='robot-place-red-in-green')
+parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
 parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
 parser.add_argument('--n_rotations', type=int, default=180)
 parser.add_argument('--agent', type=str, default='robot-align')
@@ -128,13 +128,20 @@ def main():
     '''
 
     robot_env = RobotEnv()
-    # robot_task = Task()
-    robot_task = KitSixTools()
+
+    if cmd_args.task == 'robot-kit-four-tools':
+        robot_task = KitFourTools()
+    elif cmd_args.task == 'robot-kit-six-tools':
+        robot_task = KitSixTools()
+    elif cmd_args.task == 'robot-stack-block-pyramid':
+        robot_task = StackBlockPyramid()
+    elif cmd_args.task == 'robot-place-red-in-green':
+        robot_task = PlaceRedInGreen()
 
     robot_task.mode = 'test'
 
     # Load test dataset.
-    dataset = Dataset(os.path.join(args.data_dir, f'{cmd_args.task}-{robot_task.mode}'))
+    dataset = Dataset(os.path.join(args.data_dir, f'{cmd_args.task}-{robot_task.mode}{cmd_args.postfix}'))
     seed = dataset.max_seed
     if seed < 0:
         seed = -1 if (robot_task.mode == 'test') else -2
@@ -167,29 +174,6 @@ def main():
 
         results = []
         #print(ds.n_episodes,'============')
-        '''
-        for i in range(ds.n_episodes):
-            print(f'Test: {i + 1}/{ds.n_episodes}')
-            episode, seed = ds.load(i)
-            goal = episode[-1]
-            total_reward = 0
-            np.random.seed(seed)
-            env.seed(seed)
-            env.set_task(task)
-            obs = env.reset()
-            info = None
-            reward = 0
-            for k in range(task.max_steps):
-                extend_secs = 0 if k<task.max_steps-1 else 2
-                act = agent.act(obs, info, goal)
-                #act = agent.act(obs, info)
-                obs, reward, done, info = env.step(act, extend_secs=extend_secs)
-                total_reward += reward
-                print(f'Total Reward: {total_reward} Done: {done}')
-                if done:
-                    break
-            results.append((total_reward, info))
-        '''
 
         '''
         # visalize test
@@ -201,9 +185,9 @@ def main():
                 print("test visualize")
                 obs = episode[k][0]
                 act = episode[k][1]
+                # act = agent.act(obs, info=None, goal=None)
                 agent.test_visualize(obs, act)
         '''
-
         while dataset.n_episodes < cmd_args.n:
         # for i in range(n_test_runs):
             print(f"Robot test: {dataset.n_episodes + 1} / {cmd_args.n}")
@@ -213,10 +197,8 @@ def main():
             print(f"===============Run-{dataset.n_episodes + 1}=================")
             print("Please reset environment.")
             robot_env.reset()
-            robot_env.start_camera_loop()
             while (input("Enter [y] to confirm setup:") != "y"):
                 pass
-            robot_env.end_camera_loop()
 
             reward = robot_task.get_reward()
 
@@ -227,10 +209,11 @@ def main():
                     # pass
                 obs = robot_env.get_obs()
                 act = agent.act(obs, info=None, goal=None)
+                # agent.test_visualize(obs, act)
 
                 print("Pick start...")
                 key_pick_pose = copy.deepcopy(act["pose0"])
-                key_pick_pose[0][2] += 0.05
+                key_pick_pose[0][2] += 0.1
                 robot_env.move_to_gripper_pose(key_pick_pose)
                 robot_env.move_to_gripper_pose(act["pose0"])
                 robot_env.gripper.close()
@@ -238,7 +221,7 @@ def main():
 
                 print("Place start...")
                 key_place_pose = copy.deepcopy(act["pose1"])
-                key_place_pose[0][2] += 0.05
+                key_place_pose[0][2] += 0.1
                 robot_env.move_to_gripper_pose(key_place_pose)
                 robot_env.move_to_gripper_pose(act["pose1"])
                 robot_env.gripper.open()
@@ -249,32 +232,30 @@ def main():
                 robot_env.reset()
             
             print("Capture last observation")
-            obs = robot_env.get_obs()
+            # obs = robot_env.get_obs()
             episode.append((obs, None, reward, None))
             
             dataset.add(seed, episode)
             print('Conduct {} trials to collect {} successful {} demonstration'.format(dataset.n_episodes, cmd_args.task, cmd_args.n))
 
+        '''
+        # Save results.
+        model_dir = '{}{}'.format(cmd_args.agent, cmd_args.postfix)
+        if not os.path.exists(os.path.join(args.test_dir, name)):
+            os.makedirs(os.path.join(args.test_dir, name))
+        if not os.path.exists(os.path.join(args.test_dir, name, model_dir)):
+            os.makedirs(os.path.join(args.test_dir, name, model_dir))
+        with open(os.path.join(args.test_dir, name, model_dir, f'{test_step}.pkl'),'wb') as f:
+            pickle.dump(results, f)
 
-            '''
-            # Save results.
-            model_dir = '{}{}'.format(cmd_args.agent, cmd_args.postfix)
-            if not os.path.exists(os.path.join(args.test_dir, name)):
-                os.makedirs(os.path.join(args.test_dir, name))
-            if not os.path.exists(os.path.join(args.test_dir, name, model_dir)):
-                os.makedirs(os.path.join(args.test_dir, name, model_dir))
-            with open(os.path.join(args.test_dir, name, model_dir, f'{test_step}.pkl'),'wb') as f:
-                pickle.dump(results, f)
-
-            # clear the model
-            agent.clear()
-            '''
-                
+        # clear the model
+        agent.clear()
+        '''                
 
 def load_agent(agent_name, task_name):
     if agent_name == 'equ':
         print('Cn equivariant agent')
-        network_params = args.equact
+        network_params = args.equ
         agent = equ_agent(name=task_name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
                             n_rotations=cmd_args.n_rotations,network_params=network_params,
                             postfix=cmd_args.postfix)
@@ -310,13 +291,6 @@ def load_agent(agent_name, task_name):
         network_params['transport']['n_ori_align'] = cmd_args.n_align
         network_params['transport']['n_dim_per_ori'] = cmd_args.n_feat
         agent = robot_align_agent(name=task_name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
-                                n_rotations=cmd_args.n_rotations,network_params=network_params,postfix=cmd_args.postfix)
-    elif agent_name == 'robot-align-mini':
-        print('robot-align-mini equivariant agent')
-        network_params = args.so2
-        network_params['transport']['n_ori_align'] = cmd_args.n_align
-        network_params['transport']['n_dim_per_ori'] = cmd_args.n_feat
-        agent = robot_align_mini_agent(name=task_name,task=cmd_args.task,root_dir=args.checkpoint_dir,device=cmd_args.gpu_id,
                                 n_rotations=cmd_args.n_rotations,network_params=network_params,postfix=cmd_args.postfix)
     elif agent_name == 'mix':
         print('mix equivariant agent')

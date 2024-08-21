@@ -119,8 +119,9 @@ class Environment():
 
     def reset(self):
         self.arm.move_home()
-        self.gripper.move(100) # test
+        # self.gripper.move(100) # kit test
         # self.gripper.move(130) # train
+        self.gripper.move(50) # red-in-green test
 
     
     def _broad_transform(self, pose):

@@ -61,8 +61,13 @@ class TransporterAgent:
         # self.cam_config = cameras.RealSenseD415.CONFIG
         self.cam_config = CAMERA_CONFIG
         self.models_dir = os.path.join(root_dir, self.name, 'robot-so2-align'+postfix)
+        
         # self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
-        self.bounds = np.array([[0.66, 1.06], [-0.30, 0.30], [-0.1, 0.1]])
+        if self.task == 'robot-stack-block-pyramid':
+            self.bounds = np.array([[0.66, 1.06], [-0.30, 0.30], [-0.10, 0.15]]) #0.15
+        else:
+            self.bounds = np.array([[0.66, 1.06], [-0.30, 0.30], [-0.10, 0.10]]) #0.15
+        
         if device == -1:
             device = torch.device('cpu')
         else:
@@ -101,9 +106,11 @@ class TransporterAgent:
         #   input_image = np.concatenate((input_image, goal_image), axis=2)
         #   assert input_image.shape[2] == 12, input_image.shape
 
+        obs_tmp = copy.deepcopy(obs)
+
         # Get color and height maps from RGB-D images.
         cmap, hmap = utils.get_fused_heightmap_from_points(
-            obs, self.cam_config, self.bounds, self.pix_size)
+            obs_tmp, self.cam_config, self.bounds, self.pix_size)
         # print('depth image',hmap.shape, hmap[Ellipsis, None].shape)
         img = np.concatenate((cmap,
                               hmap[Ellipsis, None],
@@ -189,7 +196,6 @@ class TransporterAgent:
         print('Skipping validation.')
 
     def test_visualize(self, obs, act):
-        obs = copy.deepcopy(obs)
         img = self.get_image(obs)
 
         p0_xyz, p0_xyzw = act['pose0']
@@ -238,28 +244,28 @@ class TransporterAgent:
         p1_pix = argmax[:2]
         p1_theta = argmax[2] * (2 * np.pi / place_conf.shape[2])
      
-        self._display_sample(np.uint8(img[:, :, :3]), p0_pix, p0_theta-np.pi/2, 
-                                                p1_pix, p0_theta+p1_theta-np.pi/2)
+        # self._display_sample(np.uint8(img[:, :, :3]), p0_pix, p0_theta-np.pi/2, 
+        #                                         p1_pix, p0_theta+p1_theta-np.pi/2)
 
         # Pixels to end effector poses.
         hmap = img[:, :, 3]
         p0_xyz = utils.pix_to_xyz(p0_pix, hmap, self.bounds, self.pix_size)
         p1_xyz = utils.pix_to_xyz(p1_pix, hmap, self.bounds, self.pix_size)
 
-        # change z value for block-insertion
+        # change z value for different tasks
         p0_xyz = list(p0_xyz)
-        if self.task == 'assembling-kits-3dtoolkit' or \
-            self.task == 'assembling-single-toolkit':
-            p0_xyz[2] = 0.03 + 0.03
-        else:
-            p0_xyz[2] = 0.03 + 0.04  # cube is 0.08X0.03 X 0.04
-        # p0_xyz[2] = -0.03
-        p0_xyz[2] = -0.034
+        if self.task == 'robot-kit-six-tools':
+            p0_xyz[2] = -0.034
+        elif self.task == 'robot-place-red-in-green':
+            p0_xyz[2] = -0.01
         p0_xyz = tuple(p0_xyz)
 
         p1_xyz = list(p1_xyz)
-        p1_xyz[2] = 0.03 + 0.04  # cube is 0.08X0.03 X 0.04
-        p1_xyz[2] = 0.0 #0.01
+        # p1_xyz[2] = 0.0 #0.01
+        if self.task == 'robot-kit-six-tools':
+            p1_xyz[2] = 0.0
+        elif self.task == 'robot-place-red-in-green':
+            p1_xyz[2] = 0.01
         
         p1_xyz = tuple(p1_xyz)
 
@@ -319,8 +325,8 @@ class TransporterAgent:
         # print(img.shape)
 
         # Define the parameters for two circles (x, y, radius)
-        circle1 = Circle((pos0[1], pos0[0]), 1, color='red', fill=True, alpha=0.5)  # Solid red circle
-        circle2 = Circle((pos1[1], pos1[0]), 1, color='blue', fill=True, alpha=0.5)  # Solid blue circle
+        circle1 = Circle((pos0[1], pos0[0]), 3, color='red', fill=True, alpha=0.5)  # Solid red circle
+        circle2 = Circle((pos1[1], pos1[0]), 3, color='blue', fill=True, alpha=0.5)  # Solid blue circle
         # print(pos0, pos1)
 
         # Add the circles to the plot

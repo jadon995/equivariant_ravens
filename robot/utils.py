@@ -136,7 +136,7 @@ def reconstruct_heightmaps_from_points(color, xyz, configs, bounds, pixel_size):
     rotation = np.array(rotation).reshape(3, 3)
     transform = np.eye(4)
     transform[:3, :] = np.hstack((rotation, position))
-    # xyz = transform_pointcloud(xyz, transform)
+    xyz = transform_pointcloud(xyz, transform)
     heightmap, colormap = get_heightmap(xyz, color, bounds, pixel_size)
     heightmaps.append(heightmap)
     colormaps.append(colormap)

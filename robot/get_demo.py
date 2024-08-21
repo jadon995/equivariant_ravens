@@ -19,7 +19,7 @@ from robot_so2_align_transporter import TransporterAgent as robot_align_agent
 
 from dataset import Dataset
 from environment import Environment as RobotEnv
-from task import KitFourTools, KitSixTools, StackBlockPyramid
+from task import KitFourTools, KitSixTools, StackBlockPyramid, PlaceRedInGreen
 
 parser = argparse.ArgumentParser(description='ravens_demos')
 
@@ -30,8 +30,9 @@ parser.add_argument('--disp', action='store_true', default=False)
 parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--continuous', action='store_true', default=False)
 parser.add_argument('--steps_per_seg', type=int, default=3)
-parser.add_argument('--task', type=str, default='robot-kit-six-tools')
-# parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
+# parser.add_argument('--task', type=str, default='robot-kit-six-tools')
+# parser.add_argument('--task', type=str, default='robot-place-red-in-green')
+parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
 #parser.add_argument('--task', type=str, default='align-box-corner')
 #parser.add_argument('--task', type=str, default='place-red-in-green')
 #parser.add_argument('--task', type=str, default='stack-block-pyramid')
@@ -94,6 +95,9 @@ def main():
         robot_task = KitSixTools()
     elif args.task == 'robot-stack-block-pyramid':
         robot_task = StackBlockPyramid()
+    elif args.task == 'robot-place-red-in-green':
+        robot_task = PlaceRedInGreen()
+
     robot_task.mode = args.mode
     agent = None # human demonstrations   
     dataset = Dataset(os.path.join(args.data_dir, f'{args.task}-{robot_task.mode}'))
