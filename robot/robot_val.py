@@ -81,7 +81,7 @@ args = edict(config_data)
 
 def main():
     # Initialize environment and task.
-    robot_env = RobotEnv()
+    # robot_env = RobotEnv()
 
     if cmd_args.task == 'robot-kit-four-tools':
         robot_task = KitFourTools()
@@ -92,7 +92,7 @@ def main():
     elif cmd_args.task == 'robot-place-red-in-green':
         robot_task = PlaceRedInGreen()
 
-    robot_task.mode = 'test'
+    robot_task.mode = 'train'
 
     # Load test dataset.
     dataset = Dataset(os.path.join(args.data_dir, f'{cmd_args.task}-{robot_task.mode}{cmd_args.postfix}'))
@@ -126,62 +126,17 @@ def main():
         agent = load_agent(cmd_args.agent, name)
         agent.load(test_step)
 
-        while dataset.n_episodes < cmd_args.n:
-            print(f"Robot test: {dataset.n_episodes + 1} / {cmd_args.n}")
-            episode, total_reward = [], 0
-            seed += 2
-
-            print(f"===============Run-{dataset.n_episodes + 1}=================")
-            print("Please reset environment.")
-            robot_env.reset()
-            while (input("Enter [y] to confirm setup:") != "y"):
-                pass
-
-            reward = robot_task.get_reward()
-
-            for j in range(max_steps):
-                print(f"-------Begin Step-{j+1}/{max_steps}-------")
-                print("Capture and process image ...")
-                # while (input("Enter [y] to capture image:") != "y"):
-                    # pass
-                obs = robot_env.get_obs()
+        # visalize test
+        for i in range(10, dataset.n_episodes):
+            print(f"Test: {i + 1}/{dataset.n_episodes}")
+            episode, seed = dataset.load(i)
+            goal = episode[-1]
+            for k in range(robot_task.max_steps):
+                print(f"Run: {k + 1}")
+                obs = episode[k][0]
+                act = episode[k][1]
                 act = agent.act(obs, info=None, goal=None)
-                # agent.test_visualize(obs, act)
-
-                # Adjust the place pose
-                if cmd_args.task == 'robot-stack-block-pyramid':
-                    if 2<j<5: act["pose1"][0][2] += 0.053
-                    if j==5: act["pose1"][0][2] += 0.103
-
-                print("Pick start...")
-                pre_pick_pose = copy.deepcopy(act["pose0"])
-                post_pick_pose = copy.deepcopy(act["pose0"])
-                pre_pick_pose[0][2] += 0.1
-                post_pick_pose[0][2] = act["pose1"][0][2] + 0.08
-                robot_env.move_to_gripper_pose(pre_pick_pose)
-                robot_env.move_to_gripper_pose(act["pose0"])
-                robot_env.gripper.close()
-                robot_env.move_to_gripper_pose(post_pick_pose)
-
-                print("Place start...")
-                key_place_pose = copy.deepcopy(act["pose1"])
-                key_place_pose[0][2] += 0.08
-                robot_env.move_to_gripper_pose(key_place_pose)
-                robot_env.move_to_gripper_pose(act["pose1"])
-                robot_env.gripper.open()
-                # robot_env.gripper.move('70')
-                robot_env.move_to_gripper_pose(key_place_pose)
-
-                episode.append((obs, act, reward, None))
-
-                robot_env.reset() # reset arm and gripper
-            
-            print("Capture last observation")
-            # obs = robot_env.get_obs()
-            episode.append((obs, None, reward, None))
-            
-            dataset.add(seed, episode)
-            print('Conduct {} trials to collect {} successful {} demonstration'.format(dataset.n_episodes, cmd_args.task, cmd_args.n))     
+                agent.test_visualize(obs, act)           
 
 def load_agent(agent_name, task_name):
     if agent_name == 'equ':

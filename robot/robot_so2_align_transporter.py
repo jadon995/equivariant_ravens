@@ -258,15 +258,21 @@ class TransporterAgent:
             p0_xyz[2] = -0.034
         elif self.task == 'robot-place-red-in-green':
             p0_xyz[2] = -0.01
+        elif self.task == 'robot-stack-block-pyramid':
+            p0_xyz[2] = -0.01
+        else:
+            p0_xyz[2] = -0.02
         p0_xyz = tuple(p0_xyz)
 
         p1_xyz = list(p1_xyz)
-        # p1_xyz[2] = 0.0 #0.01
         if self.task == 'robot-kit-six-tools':
             p1_xyz[2] = 0.0
         elif self.task == 'robot-place-red-in-green':
             p1_xyz[2] = 0.01
-        
+        elif self.task == 'robot-stack-block-pyramid':
+            p1_xyz[2] = -0.005
+        else:
+            p1_xyz[2] = 0.0
         p1_xyz = tuple(p1_xyz)
 
         # get pose
