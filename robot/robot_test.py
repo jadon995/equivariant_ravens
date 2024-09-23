@@ -32,7 +32,7 @@ from robot_so2_align_transporter import TransporterAgent as robot_align_agent
 
 from dataset import Dataset
 from environment import Environment as RobotEnv
-from task import Task, KitFourTools, KitSixTools, PlaceRedInGreen, StackBlockPyramid
+from task import Task, KitFourTools, KitSixTools, PlaceRedInGreen, StackBlockPyramid, KitSurgicalTools
 
 import faulthandler; faulthandler.enable()
 
@@ -44,14 +44,15 @@ parser.add_argument('--config_file', type=str, default='train-robot.yaml')
 # parser.add_argument('--assets_root', type=str, default='./raven/assets')
 # parser.add_argument('--task', type=str, default='robot-kit-six-tools')
 # parser.add_argument('--task', type=str, default='robot-place-red-in-green')
-parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
+#parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
+parser.add_argument('--task', type=str, default='robot-kit-surgical-tools')
 parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
 parser.add_argument('--n_rotations', type=int, default=36)
 parser.add_argument('--agent', type=str, default='robot-align')
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--n_align', type=int, default=12)
 parser.add_argument('--n_feat', type=int, default=1)
-parser.add_argument('--n_steps', type=int,default=10000)# the testing steps
+parser.add_argument('--n_steps', type=int,default=14000)# the testing steps
 
 # parser.add_argument('--n_runs', type=int,default=1)
 # parser.add_argument('--interval', type=int,default=1000)
@@ -91,6 +92,8 @@ def main():
         robot_task = StackBlockPyramid()
     elif cmd_args.task == 'robot-place-red-in-green':
         robot_task = PlaceRedInGreen()
+    elif cmd_args.task == 'robot-kit-surgical-tools':
+        robot_task = KitSurgicalTools()
 
     robot_task.mode = 'test'
 
@@ -156,8 +159,8 @@ def main():
                 print("Pick start...")
                 pre_pick_pose = copy.deepcopy(act["pose0"])
                 post_pick_pose = copy.deepcopy(act["pose0"])
-                pre_pick_pose[0][2] += 0.1
-                post_pick_pose[0][2] = act["pose1"][0][2] + 0.08
+                pre_pick_pose[0][2] += 0.2
+                post_pick_pose[0][2] = act["pose1"][0][2] + 0.12
                 robot_env.move_to_gripper_pose(pre_pick_pose)
                 robot_env.move_to_gripper_pose(act["pose0"])
                 robot_env.gripper.close()
@@ -165,7 +168,7 @@ def main():
 
                 print("Place start...")
                 key_place_pose = copy.deepcopy(act["pose1"])
-                key_place_pose[0][2] += 0.08
+                key_place_pose[0][2] += 0.005
                 robot_env.move_to_gripper_pose(key_place_pose)
                 robot_env.move_to_gripper_pose(act["pose1"])
                 robot_env.gripper.open()

@@ -31,3 +31,8 @@ class PlaceRedInGreen(Task):
         super().__init__(*args, **kwargs)
         self.max_steps = 1
 
+
+class KitSurgicalTools(Task):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.max_steps = 6

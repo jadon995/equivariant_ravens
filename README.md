@@ -79,3 +79,21 @@ python -m tensorboard.main --logdir=logs  # Open the browser to where it tells y
 
 **Actions:** Picking: (u,v,theta); Placing: (u,v,theta)
 
+
+## Robot Commends
+
+**Step 1.** Collect human demonstrations
+
+```
+python robot/get_demo.py
+```
+
+**Step 2.** Perform validation
+```
+python robot/robot_val.py
+```
+
+**Step 3.** Peform robot testing
+```
+python robot robot_test.py
+```

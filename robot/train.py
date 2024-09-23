@@ -11,6 +11,7 @@ import argparse
 import tensorflow as tf
 import torch
 import torch.backends.cudnn as cudnn
+from itertools import chain 
 
 import sys
 sys.path.append("./")
@@ -37,7 +38,8 @@ parser.add_argument('--config_file', type=str, default='train-robot.yaml')
 # parser.add_argument('--data_dir', type=str, default='.')
 # parser.add_argument('--task', type=str, default='robot-kit-six-tools')
 # parser.add_argument('--task', type=str, default='robot-place-red-in-green')
-parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
+# parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
+parser.add_argument('--task', type=str, default='robot-kit-surgical-tools')
 parser.add_argument('--n_demos', type=int, default=10)
 parser.add_argument('--n_rotations', type=int, default=36)
 parser.add_argument('--agent', type=str, default='robot-align')
@@ -114,7 +116,9 @@ def main():
         # Limit random sampling during training to a fixed dataset.
         max_demos = train_dataset.n_episodes
         episodes = np.random.choice(range(max_demos), cmd_args.n_demos, False)
-        episodes = list(range(0,10)) # fixed top ten case
+        #range1= range (1,15)
+        #range2= range (16,20)
+        episodes = list(range(0,10))# fixed top ten case
         train_dataset.set(episodes)
         print('use {} demos and train {} steps per epoch'.format(cmd_args.n_demos,cmd_args.interval))
         print('Sample index: ', episodes)

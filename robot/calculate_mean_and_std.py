@@ -42,7 +42,7 @@ from robot_so2_align_transporter import TransporterAgent as robot_align_agent
 
 from dataset import Dataset
 from environment import Environment as RobotEnv
-from task import Task, KitFourTools, KitSixTools
+from task import Task, KitFourTools, KitSixTools, KitSurgicalTools
 
 import faulthandler; faulthandler.enable()
 
@@ -53,9 +53,9 @@ parser.add_argument('--config_file', type=str, default='train-robot.yaml')
 # parser.add_argument('--data_dir', type=str, default='.')
 # parser.add_argument('--assets_root', type=str, default='./raven/assets')
 # parser.add_argument('--task', type=str, default='robot-kit-handtools')
-parser.add_argument('--task', type=str, default='robot-kit-six-tools')
+parser.add_argument('--task', type=str, default='robot-kit-surgical-tools')
 parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
-parser.add_argument('--n_rotations', type=int, default=180)
+parser.add_argument('--n_rotations', type=int, default=36)
 parser.add_argument('--agent', type=str, default='robot-align')
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--n_align', type=int, default=12)
@@ -68,7 +68,7 @@ parser.add_argument('--gpu_id', type=int, default=0)
 parser.add_argument('--disp', action='store_true', default=False)
 parser.add_argument('--entire', action='store_true', default=False)
 parser.add_argument('--seed', type=int, default=0)
-parser.add_argument('--n', type=int, default=25)
+parser.add_argument('--n', type=int, default=10)
 # parser.add_argument('--shared_memory', action='store_true', default=False)
 # parser.add_argument('--equ', action='store_true', default=False)
 # parser.add_argument('--lite', action='store_true', default=False)
@@ -127,8 +127,9 @@ def main():
     '''
 
     # robot_env = RobotEnv()
-    robot_task = Task()
-    robot_task = KitSixTools()
+    # robot_task = Task()
+    # robot_task = KitSixTools()
+    robot_task = KitSurgicalTools()
 
     # robot_task.mode = 'test'
     robot_task.mode = 'train'

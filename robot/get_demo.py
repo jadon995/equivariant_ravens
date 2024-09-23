@@ -19,7 +19,7 @@ from robot_so2_align_transporter import TransporterAgent as robot_align_agent
 
 from dataset import Dataset
 from environment import Environment as RobotEnv
-from task import KitFourTools, KitSixTools, StackBlockPyramid, PlaceRedInGreen
+from task import KitFourTools, KitSixTools, StackBlockPyramid, PlaceRedInGreen, KitSurgicalTools
 
 parser = argparse.ArgumentParser(description='ravens_demos')
 
@@ -32,13 +32,8 @@ parser.add_argument('--continuous', action='store_true', default=False)
 parser.add_argument('--steps_per_seg', type=int, default=3)
 # parser.add_argument('--task', type=str, default='robot-kit-six-tools')
 # parser.add_argument('--task', type=str, default='robot-place-red-in-green')
-parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
-#parser.add_argument('--task', type=str, default='align-box-corner')
-#parser.add_argument('--task', type=str, default='place-red-in-green')
-#parser.add_argument('--task', type=str, default='stack-block-pyramid')
-#parser.add_argument('--task', type=str, default='palletizing-boxes')
-#parser.add_argument('--task', type=str, default='packing-boxes')
-#parser.add_argument('--task', type=str, default='assembling-kits')
+# parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
+parser.add_argument('--task', type=str, default='robot-kit-surgical-tools')
 parser.add_argument('--n_align', type=int, default=12)
 parser.add_argument('--n_feat', type=int, default=1)
 parser.add_argument('--config_file', type=str, default='train-robot.yaml')
@@ -54,39 +49,7 @@ with open(os.path.join('configs', args.config_file), 'r') as file:
 config_args = edict(config_data)
 
 def main():
-    '''
-    enc_cls = Environment
-    env = enc_cls(args.assets_root,
-                  disp=args.disp,
-                  shared_memory=False,
-                  hz=480)
-    if args.task == 'block-insertion':
-        task = BlockInsertion(continuous=args.continuous)
-    elif args.task == 'place-red-in-green':
-        task = PlaceRedInGreen(continuous=args.continuous)
-    elif args.task == 'align-box-corner':
-        task = AlignBoxCorner(continuous=args.continuous)
-    elif args.task == 'stack-block-pyramid':
-        task = StackBlockPyramid(continuous=args.continuous)
-    elif args.task == 'palletizing-boxes':
-        task = PalletizingBoxes(continuous=args.continuous)
-    elif args.task == 'packing-boxes':
-        task = PackingBoxes(continuous=args.continuous)
-    elif args.task == 'assembling-kits':
-        task = AssemblingKits(continuous=args.continuous)
-    elif args.task == 'assembling-kits-tool':
-        task = AssemblingKitsTool(continuous=args.continuous)
-    elif args.task == 'assembling-kits-screwdriver':
-        task = AssemblingKitsScrewDriver(continuous=args.continuous)
-    elif args.task == 'assembling-kits-3dtool':
-        task = AssemblingKits3DTool(continuous=args.continuous)
-    elif args.task == 'assembling-kits-3dtoolkit':
-        task = AssemblingKits3DToolKit(continuous=args.continuous)
-    elif args.task == 'assembling-single-toolkit':
-        task = AssemblingToolKit(continuous=args.continuous)
-    else:
-        raise RuntimeError('gripper version no {}'.format(args.task))
-'''
+    # Initialize environment and task.
     robot_env = RobotEnv()
 
     if args.task == 'robot-kit-four-tools':
@@ -97,6 +60,8 @@ def main():
         robot_task = StackBlockPyramid()
     elif args.task == 'robot-place-red-in-green':
         robot_task = PlaceRedInGreen()
+    elif args.task == 'robot-kit-surgical-tools':
+        robot_task = KitSurgicalTools()
 
     robot_task.mode = args.mode
     agent = None # human demonstrations   
@@ -127,7 +92,7 @@ def main():
         # env.set_task(task)
         print(f"===============Trial-{trial_n}=================")
         print("Please reset environment.")
-        robot_env.reset()
+        robot_env.reset() # Move to initial conditions
         while (input("Enter [y] to confirm setup:") != "y"):
             pass
 
@@ -141,6 +106,7 @@ def main():
             act = robot_env.get_actions()
             episode.append((obs, act, reward, info))
 
+            # Visulaize the record images and demonstration data
             agent.test_visualize(obs, act)
             
             total_reward += reward

@@ -15,6 +15,7 @@ import torch.backends.cudnn as cudnn
 #from ravens import tasks
 import pickle
 import copy
+from itertools import chain 
 
 from dataset import Dataset
 from networks.equivariant_transporter import TransporterAgent as equ_agent
@@ -32,7 +33,7 @@ from robot_so2_align_transporter import TransporterAgent as robot_align_agent
 
 from dataset import Dataset
 from environment import Environment as RobotEnv
-from task import Task, KitFourTools, KitSixTools, PlaceRedInGreen, StackBlockPyramid
+from task import Task, KitFourTools, KitSixTools, PlaceRedInGreen, StackBlockPyramid, KitSurgicalTools
 
 import faulthandler; faulthandler.enable()
 
@@ -44,14 +45,15 @@ parser.add_argument('--config_file', type=str, default='train-robot.yaml')
 # parser.add_argument('--assets_root', type=str, default='./raven/assets')
 # parser.add_argument('--task', type=str, default='robot-kit-six-tools')
 # parser.add_argument('--task', type=str, default='robot-place-red-in-green')
-parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
+#parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
+parser.add_argument('--task', type=str, default='robot-kit-surgical-tools')
 parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
 parser.add_argument('--n_rotations', type=int, default=36)
 parser.add_argument('--agent', type=str, default='robot-align')
 parser.add_argument('--postfix', type=str, default='')
 parser.add_argument('--n_align', type=int, default=12)
 parser.add_argument('--n_feat', type=int, default=1)
-parser.add_argument('--n_steps', type=int,default=10000)# the testing steps
+parser.add_argument('--n_steps', type=int,default=14000)# the testing steps
 
 # parser.add_argument('--n_runs', type=int,default=1)
 # parser.add_argument('--interval', type=int,default=1000)
@@ -59,7 +61,7 @@ parser.add_argument('--gpu_id', type=int, default=0)
 parser.add_argument('--disp', action='store_true', default=False)
 parser.add_argument('--entire', action='store_true', default=False)
 parser.add_argument('--seed', type=int, default=0)
-parser.add_argument('--n', type=int, default=25) # total number of tests
+parser.add_argument('--n', type=int, default=10) # total number of tests
 # parser.add_argument('--shared_memory', action='store_true', default=False)
 # parser.add_argument('--equ', action='store_true', default=False)
 # parser.add_argument('--lite', action='store_true', default=False)
@@ -91,6 +93,8 @@ def main():
         robot_task = StackBlockPyramid()
     elif cmd_args.task == 'robot-place-red-in-green':
         robot_task = PlaceRedInGreen()
+    elif cmd_args.task == 'robot-kit-surgical-tools':
+        robot_task = KitSurgicalTools()
 
     robot_task.mode = 'train'
 
@@ -116,7 +120,11 @@ def main():
     # agent = load_agent(cmd_args.agent, name, args)
 
     if cmd_args.entire == True:
-        n_steps = [10000,8000,6000,4000,2000]
+        #n_steps = [10000,8000,6000,4000,2000]
+        #n_steps = [16000,14000,12000,10000,8000]
+        n_steps = [20000,18000,16000,14000,12000]
+
+
     else:
         n_steps = [cmd_args.n_steps] 
     
@@ -127,7 +135,10 @@ def main():
         agent.load(test_step)
 
         # visalize test
-        for i in range(10, dataset.n_episodes):
+        #range1= range(1,5)
+        #range2= range(16, dataset.n_episodes)
+        #for i in chain (range1,range2):
+        for i in range(10,dataset.n_episodes ):
             print(f"Test: {i + 1}/{dataset.n_episodes}")
             episode, seed = dataset.load(i)
             goal = episode[-1]

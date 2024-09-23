@@ -261,7 +261,7 @@ class TransporterAgent:
         elif self.task == 'robot-stack-block-pyramid':
             p0_xyz[2] = -0.01
         else:
-            p0_xyz[2] = -0.02
+            p0_xyz[2] = -0.005
         p0_xyz = tuple(p0_xyz)
 
         p1_xyz = list(p1_xyz)
@@ -272,7 +272,7 @@ class TransporterAgent:
         elif self.task == 'robot-stack-block-pyramid':
             p1_xyz[2] = -0.005
         else:
-            p1_xyz[2] = 0.0
+            p1_xyz[2] = -0.02
         p1_xyz = tuple(p1_xyz)
 
         # get pose

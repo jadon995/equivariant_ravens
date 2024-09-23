@@ -350,14 +350,14 @@ def transform_pts_Rt(pts, R, t):
 
 def preprocess(img):
   """Pre-process input (subtract mean, divide by std)."""
-  # color_mean = 0.18877631
-  # depth_mean = 0.00509261
-  # color_std = 0.07276466
-  # depth_std = 0.00903967
-  color_mean = 0.3500047316153844
-  depth_mean = 0.06189509704709053
-  color_std = 0.24858064373043456
-  depth_std = 0.01751254615234933
+  # color_mean = 0.3500047316153844
+  # depth_mean = 0.06189509704709053
+  # color_std = 0.24858064373043456
+  # depth_std = 0.01751254615234933
+  color_mean = 0.6040032545725504
+  depth_mean = 0.0754773543526729
+  color_std = 0.4000599294379022
+  depth_std = 0.01713391503969326
   img[:, :, :3] = (img[:, :, :3] / 255 - color_mean) / color_std
   img[:, :, 3:] = (img[:, :, 3:] - depth_mean) / depth_std
   return img

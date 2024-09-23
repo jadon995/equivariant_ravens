@@ -68,7 +68,7 @@ class Environment():
         
         # self.move_to_gripper_pose((np.array([0.80, 0.2, 0.1]),
                                 #    np.array([0, 0, 0, 1])))
-        self.gripper.open()
+        self.gripper.move(130)
         place_pose = self.get_gripper_pose()
         
         # place angle is a relative value to the pick pose
@@ -121,7 +121,7 @@ class Environment():
         self.arm.move_home()
         # self.gripper.move(100) # kit test
         # self.gripper.move(130) # train
-        self.gripper.move(50) # red-in-green test
+        self.gripper.move(130) # red-in-green test
 
     
     def _broad_transform(self, pose):

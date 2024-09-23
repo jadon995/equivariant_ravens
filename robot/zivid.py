@@ -31,6 +31,7 @@ class Zivid():
         # camera setup
         rospy.wait_for_service("/zivid_camera/capture", 30)
         self.capture_service = rospy.ServiceProxy("/zivid_camera/capture", Capture)
+        self.config_service = rospy.ServiceProxy("/zivid_camera/load_settings_from_file", LoadSettingsFromFile)
         # rospy.Subscriber("/zivid_camera/color/image_color", Image, self.__color_callback)
         # rospy.Subscriber("/zivid_camera/depth/image", Image, self.__depth_callback)
         rospy.Subscriber("/zivid_camera/points/xyzrgba", PointCloud2, self.__xyz_callback)
@@ -120,6 +121,7 @@ class Zivid():
 
     
     def __config_camera(self):
+        '''
         rospy.loginfo("Enabling the reflection filter")
         settings_client = dynamic_reconfigure.client.Client("/zivid_camera/settings/")
         settings_config = {"processing_filters_reflection_removal_enabled": True}
@@ -137,6 +139,8 @@ class Zivid():
             "brightness": 1.8
             }
             acquisition_client.update_configuration(acquisition_config)
+        '''
+        self.config_service('/home/jadon/Desktop/config.yml')
 
     
     # def _trigger_loop_callback(self, event):
