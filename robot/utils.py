@@ -354,10 +354,10 @@ def preprocess(img):
   # depth_mean = 0.06189509704709053
   # color_std = 0.24858064373043456
   # depth_std = 0.01751254615234933
-  color_mean = 0.6040032545725504
-  depth_mean = 0.0754773543526729
-  color_std = 0.4000599294379022
-  depth_std = 0.01713391503969326
+  color_mean = 0.614950880408287
+  depth_mean = 0.07520887404680252
+  color_std = 0.30621578293553814
+  depth_std = 0.01763555082817292
   img[:, :, :3] = (img[:, :, :3] / 255 - color_mean) / color_std
   img[:, :, 3:] = (img[:, :, 3:] - depth_mean) / depth_std
   return img
