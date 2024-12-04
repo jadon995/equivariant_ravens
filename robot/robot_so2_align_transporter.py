@@ -326,13 +326,14 @@ class TransporterAgent:
         self.transport.clear()
 
     def _display_sample(self, img, pos0, theta0, pos1, theta1):
+        """Display observation with given pick-and-place poses"""
         fig, ax = plt.subplots()
         ax.imshow(img)
         # print(img.shape)
 
         # Define the parameters for two circles (x, y, radius)
-        circle1 = Circle((pos0[1], pos0[0]), 3, color='red', fill=True, alpha=0.5)  # Solid red circle
-        circle2 = Circle((pos1[1], pos1[0]), 3, color='blue', fill=True, alpha=0.5)  # Solid blue circle
+        circle1 = Circle((pos0[1], pos0[0]), 2, color='red', fill=True, alpha=1)  # Solid red circle
+        circle2 = Circle((pos1[1], pos1[0]), 2, color='blue', fill=True, alpha=1)  # Solid blue circle
         # print(pos0, pos1)
 
         # Add the circles to the plot
@@ -349,12 +350,11 @@ class TransporterAgent:
             end_y = center[1] - length * np.sin(rad)
             # Create and add arrow patch
             arrow = FancyArrow(center[0], center[1], end_x - center[0], end_y - center[1], 
-                            width=1.5, head_width=10, head_length=15, color=color)
+                            width=1, head_width=8, head_length=10, color=color)
             ax.add_patch(arrow)
         # Add arrows
-        add_arrow((pos0[1], pos0[0]), theta0, color='yellow')
-        add_arrow((pos1[1], pos1[0]), theta1, color='white')
-
+        add_arrow((pos0[1], pos0[0]), theta0, color='red')
+        add_arrow((pos1[1], pos1[0]), theta1, color='blue')
 
         # Hide axes
         ax.axis('off')

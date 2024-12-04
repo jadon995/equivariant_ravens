@@ -42,16 +42,16 @@ parser.add_argument('--config_file', type=str, default='train-robot.yaml')
 # parser.add_argument('--root_dir', type=str, default='.')
 # parser.add_argument('--data_dir', type=str, default='.')
 # parser.add_argument('--assets_root', type=str, default='./raven/assets')
-# parser.add_argument('--task', type=str, default='robot-kit-six-tools')
+parser.add_argument('--task', type=str, default='robot-kit-six-tools')
 # parser.add_argument('--task', type=str, default='robot-place-red-in-green')
-parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
+# parser.add_argument('--task', type=str, default='robot-stack-block-pyramid')
 parser.add_argument('--n_demos', type=int,default=10)# the demo used for testing
-parser.add_argument('--n_rotations', type=int, default=36)
+parser.add_argument('--n_rotations', type=int, default=180)
 parser.add_argument('--agent', type=str, default='robot-align')
-parser.add_argument('--postfix', type=str, default='')
+parser.add_argument('--postfix', type=str, default='-soft')
 parser.add_argument('--n_align', type=int, default=12)
 parser.add_argument('--n_feat', type=int, default=1)
-parser.add_argument('--n_steps', type=int,default=10000)# the testing steps
+parser.add_argument('--n_steps', type=int,default=12000)# the testing steps
 
 # parser.add_argument('--n_runs', type=int,default=1)
 # parser.add_argument('--interval', type=int,default=1000)
@@ -92,7 +92,7 @@ def main():
     elif cmd_args.task == 'robot-place-red-in-green':
         robot_task = PlaceRedInGreen()
 
-    robot_task.mode = 'train'
+    robot_task.mode = 'test'
 
     # Load test dataset.
     dataset = Dataset(os.path.join(args.data_dir, f'{cmd_args.task}-{robot_task.mode}{cmd_args.postfix}'))
@@ -127,7 +127,8 @@ def main():
         agent.load(test_step)
 
         # visalize test
-        for i in range(10, dataset.n_episodes):
+        # for i in range(10, dataset.n_episodes):
+        for i in range(6, 27):
             print(f"Test: {i + 1}/{dataset.n_episodes}")
             episode, seed = dataset.load(i)
             goal = episode[-1]
